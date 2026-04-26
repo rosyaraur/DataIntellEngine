@@ -1,4 +1,4 @@
-# ⚙️ DataIntellEngine
+# ⚙️ Data Intelligence Engine (DataIntellEngine)
 
 > **A unified computational engine providing standardized datasets, statistical macros, and database management tools for robust data science operations.**
 
