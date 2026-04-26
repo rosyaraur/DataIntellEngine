@@ -216,3 +216,38 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# ==========================================
+# CUSTOM RULES FOR DATA INTELL ENGINE
+# ==========================================
+
+# 1. R Environment and History
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+*.Rproj.user/
+
+# 2. SAS Junk Files
+*.sas7bndx
+*.sas-backup
+*.lck
+*.log
+*.lst
+
+# 3. Data Files (Crucial for DVC/Storage separation)
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.sas7bdat
+*.rds
+*.sqlite
+*.db
+
+# 4. Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# 5. Security & Passwords
+.env
+*.pem
+*.key
