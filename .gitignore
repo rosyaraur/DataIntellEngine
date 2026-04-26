@@ -235,7 +235,7 @@ __marimo__/
 *.lst
 
 # 3. Data Files (Crucial for DVC/Storage separation)
-*.csv
+#*.csv
 *.tsv
 *.xlsx
 *.xls
