@@ -1,0 +1,46 @@
+Name,Parent1,Parent2
+8011-3	.	.,Ambrunes	.	.,Beaulieu	.	.
+Bertiolle	.	.,BlackHeart	.	.,BlackRepublican	.	.
+Cristobalina	.	.,Dzherlo	.	.,EarlyBurlat	.	.
+EmperorFrancis	.	.,EmpressEugenie	.	.,F_Bing	.	.
+F_PC7147-009	.	.,F_PC7147-4	.	.,F_Van	.	.
+Gil-Peck	.	.,Hedelfingen	.	.,Kordia	.	.
+Krupnoplodnaya	.	.,MIM17	.	.,MIM23	.	.
+Moreau	.	.,Napoleon	.	.,P8-79	.	.
+PMR-1	.	.,Rube	.	.,Schmidt	.	.
+Schneiders	.	.,Vittoria	.	.,Windsor	.	.
+Cowiche	47-4	46-11,Pop_6.29.49	BB	MIM17,Pop_6.29.50	BB	MIM23
+Pop_5.23.15	Benton	Regina,Pop_5.23.2	Benton	Ambrune,Pop_5.23.6	Benton	Dzherlo
+Pop_6.23.44	Benton	Bertio,Pop_6.23.55	Benton	Vittor,Chinook	Bing	Gil-Peck
+Pop_5.4.15	Bing	Regina,Pop_5.4.6	Bing	Dzherlo,Pop_6.4.44	Bing	Bertiolle
+Pop_6.4.45	Bing	Cristobal,Pop_6.4.55	Bing	Vittoria,Pop_9814-010	Bing	PMR-1
+Rainier	Bing	Van,Vic	Bing	Schmidt,Bing	BlackRepublican	.
+Pop_6.30.49	CC	MIM17,Pop_6.30.50	CC	MIM23,Pop_5.28.15	Cowiche	Regin
+Pop_5.28.37	Cowiche	Summi,Pop_6.28.44	Cowiche	Berti,Pop_6.28.45	Cowiche	Crist
+Pop_6.28.55	Cowiche	Vitto,Pop_6.31.49	DD	MIM17,Pop_6.31.50	DD	MIM23
+Pop_6.32.49	EE	MIM17,Pop_6.32.50	EE	MIM23,JI2420	EmperorFrancis	Nap
+Van	EmpressEugenie	.,Pop_6.33.49	GG	MIM17,Pop_6.33.50	GG	MIM23
+Kiona	Glacier	Cashmere,Venus	Hedelfingen	Windsor,Pop_5.12.5	Kiona	Chelan
+Pop_6.12.45	Kiona	Cristob,Pop_4.3.1	Kordia	.,Pop_5.3.1	Kordia	.
+Stella	Lambert	JI2420,Pop_4.10.19	Lapins	Tieton,Pop_4.10.2	Lapins	Ambrune
+Pop_4.10.5	Lapins	Chelan,Pop_4.18.2	Lapins	Ambrune,Pop_5.10.25	Lapins	Krupno
+Pop_5.10.26	Lapins	Moreau,Pop_5.10.40	Lapins	Venus,Pop_6.10.55	Lapins	Vittor
+Sel_4.10.15-001	Lapins	Re,Sel_4.10.5-002	Lapins	Che,Sel_4.10.5-034	Lapins	Che
+Lambert	Napoleon	BlackHea,Selah	P8-79	Stella,AA	PMR-1	Rainier
+BB	PMR-1	Rainier,CC	PMR-1	Rainier,DD	PMR-1	Rainier
+EE	PMR-1	Rainier,Pop_5.13.26	PMR-1	Moreau,Pop_5.13.40	PMR-1	Venus
+Pop_9819-027	PMR-1	Van,Sel_9819-031	PMR-1	Van,Brooks	Rainier	EarlyBurla
+GG	Rainier	PMR-1,JJ	Rainier	PMR-1,Pop_5.14.15	Rainier	Regin
+Pop_5.14.23	Rainier	Bento,Pop_5.14.26	Rainier	Morea,Pop_5.14.6	Rainier	Dzherl
+Pop_6.14.2	Rainier	Ambrun,Pop_6.14.45	Rainier	Crist,Pop_9816-112	Rainier	PMR-
+Sel_4.14.17-001	Rainier	S,Ulster	Schmidt	Lambert,Regina	Schneiders	Rube
+Pop_4.16.2	Selah	Ambrunes,Pop_5.16.25	Selah	Krupnop,Pop_5.16.26	Selah	Moreau
+Pop_5.16.40	Selah	Venus,Pop_6.16.44	Selah	Bertiol,Pop_6.16.55	Selah	Vittori
+46-11	Stella	Beaulieu,47-4	Stella	F_PC7147-4,Benton	Stella	Beaulieu
+Cashmere	Stella	EarlyBurl,Chelan	Stella	Beaulieu,Glacier	Stella	EarlyBurla
+Index	Stella	.,Lapins	Stella	Van,Tieton	Stella	EarlyBurlat
+Pop_4.18.12	Sweetheart	Re,Pop_5.18.25	Sweetheart	Kr,Pop_5.18.26	Sweetheart	Mo
+Sel_4.18.12-005	Sweethear,Sel_4.18.15-010	Sweethear,Sel_4.18.15-039	Sweethear
+Sel_4.18.15-042	Sweethear,Sel_4.18.15-047	Sweethear,Sel_4.18.15-048	Sweethear
+Newstar	Van	Stella,Pop_5.20.6	Van	Dzherlo,Pop_6.20.45	Van	Cristobal
+Summit	Van	Sam,Sunburst	Van	Stella,Sweetheart	Van	Newstar
