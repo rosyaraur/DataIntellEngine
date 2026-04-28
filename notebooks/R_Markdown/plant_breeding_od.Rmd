@@ -1,0 +1,98 @@
+---
+title: "Optimal Design in Plant Breeding: A Multi-Environment Trial Simulation using 'od'"
+author: "Gemini"
+output: 
+  html_document:
+    toc: true
+    theme: united
+---
+
+## Introduction
+
+While `skpr` is fantastic for its ease of use and user interface, the **`od` package** (Optimal Design) is a powerhouse under the hood. It is highly favored by statisticians because it relies on rigorous integer programming and multiplicative algorithms. It is incredibly fast and allows you to strictly define the mathematical regression matrix.
+
+In plant breeding, a classic scenario is evaluating Genotype-by-Environment (GxE) interactions. Let's simulate a Multi-Environment Trial (MET) where you want to test new breeding lines across different locations, but you don't have enough seed or budget to plant every line at every location.
+
+## The Plant Breeding Scenario
+
+* **Genotypes:** 12 new breeding lines (Gen1 through Gen12).
+* **Environments:** 3 distinct testing locations (Env1, Env2, Env3).
+* **Full Factorial:** To test every line at every location requires 36 plots (12 * 3).
+* **Budget Constraint:** You only have resources (or land area) for **24 plots**.
+
+Our goal is to build a **D-optimal design** that allows us to estimate the main effects of both the Genotype and the Environment as precisely as possible within that 24-plot limit.
+
+## How the `od` Package Works
+
+Unlike other packages where you just pass a formula and a dataset, `od` requires you to explicitly build the **model matrix** (often denoted as $F_x$). This matrix translates your categorical factors into the mathematical 1s and 0s that the algorithm actually optimizes.
+
+Here is the complete simulated R workflow:
+
+```{r od-simulation, message=FALSE, warning=FALSE}
+# Install the package if you haven't already
+# install.packages("od")
+library(od)
+
+# ---------------------------------------------------------
+# 1. Define the Candidate Space
+# ---------------------------------------------------------
+# We have 12 genotypes and 3 environments
+genotypes <- paste0("Gen", 1:12)
+environments <- paste0("Env", 1:3)
+
+# Create a data frame of all 36 possible plot combinations
+candidate_space <- expand.grid(Genotype = factor(genotypes), 
+                               Environment = factor(environments))
+
+# ---------------------------------------------------------
+# 2. Build the Regression Model Matrix (Fx)
+# ---------------------------------------------------------
+# The 'od' package optimizes the mathematical matrix directly.
+# We use model.matrix() to convert our factors into dummy variables.
+# We are modeling the main effects of Genotype and Environment.
+Fx <- model.matrix(~ Genotype + Environment, data = candidate_space)
+
+# Note: Fx is now a 36-row matrix containing 1s and 0s representing our model.
+
+# ---------------------------------------------------------
+# 3. Calculate the Exact D-Optimal Design
+# ---------------------------------------------------------
+# We pass the matrix (Fx) and our exact budget/plot limit (b = 24).
+# od_D calculates the D-optimal design.
+optimal_design <- od_D(Fx = Fx, b = 24)
+
+# ---------------------------------------------------------
+# 4. Extract and Format the Final Planting Roster
+# ---------------------------------------------------------
+# The algorithm returns 'w.best', which is a vector indicating how many 
+# times each of the 36 candidate plots should be planted (0, 1, 2, etc.)
+
+# Let's attach these frequencies back to our candidate space
+candidate_space$Replications <- optimal_design$w.best
+
+# Filter out the plots that the algorithm decided NOT to plant (Replications = 0)
+final_planting_roster <- subset(candidate_space, Replications > 0)
+
+# Sort it nicely by Environment, then Genotype for the field crew
+final_planting_roster <- final_planting_roster[order(final_planting_roster$Environment, 
+                                                     final_planting_roster$Genotype), ]
+
+# Reset the row names for clean viewing
+rownames(final_planting_roster) <- NULL
+
+print("--- Optimal Planting Roster (24 Plots) ---")
+print(final_planting_roster)
+
+# Check the design efficiency metrics (optional but recommended)
+# print(optimal_design$eff) 
+```
+
+## Why this matters for Plant Breeding
+
+If you were to guess which 24 plots to plant out of 36, you might accidentally leave a specific Genotype entirely out of an Environment, or create an unbalanced matrix that makes it mathematically impossible to separate the "Genotype effect" from the "Location effect" (confounding). 
+
+By using the `od_D` function, the algorithm guarantees that:
+
+1.  Every genotype is tested at least once.
+2.  The overlap between environments is mathematically perfectly distributed.
+3.  The standard errors of your final yield estimates will be as small as physically possible given your 24-plot limit.

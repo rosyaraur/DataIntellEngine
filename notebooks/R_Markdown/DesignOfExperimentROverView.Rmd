@@ -1,0 +1,102 @@
+---
+title: "design_experiments"
+output: html_document
+date: '2026-04-26'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Design of experiments
+
+Designing an experiment carefully is just as important as the analysis that follows it. R has a robust ecosystem of packages dedicated to Design of Experiments (DoE), catering to everything from agricultural field trials to industrial quality control and algorithmic optimization.
+
+Here is a breakdown of the top R packages for designing experiments and generating layouts, complete with worked examples.
+
+## 1. agricolae: Best for Classical & Field Designs
+Originally designed for agricultural research, agricolae is an excellent package for classical experimental designs like Randomized Complete Block Designs (RCBD), Latin Squares, and Split-Plots. It not only generates the randomized design but also provides spatial "sketches" of the layout, which is incredibly useful for physical experiments.
+
+Worked Example: Randomized Complete Block Design (RCBD)
+Imagine you are testing four different fertilizers (A, B, C, D) across 4 different blocks (fields) to account for soil gradient differences.
+
+```{r agricolae, echo=FALSE}
+# Install if necessary: install.packages("agricolae")
+library(agricolae)
+
+# Define treatments and number of blocks (replications)
+treatments <- c("Fertilizer_A", "Fertilizer_B", "Fertilizer_C", "Fertilizer_D")
+blocks <- 4
+
+# Generate the RCBD
+# seed is set for reproducibility
+my_design <- design.rcbd(trt = treatments, r = blocks, seed = 42)
+
+# 1. View the 'book' (The actual randomized data frame for data collection)
+print("--- Data Collection Book ---")
+head(my_design$book)
+
+# 2. View the 'sketch' (The physical layout of the experiment)
+print("--- Physical Field Layout ---")
+print(my_design$sketch)
+```
+
+## 2. FrF2 & DoE.base
+
+ Best for Industrial & Factorial DesignsWhen you have multiple factors (variables) and need to see how they interact without running thousands of trials, you use Fractional Factorial designs. The FrF2 package specializes in 2-level fractional factorial designs, which are the backbone of industrial screening experiments, Six Sigma, and A/B/n testing.Worked Example: A $2^{5-1}$ Fractional Factorial DesignSuppose you are optimizing a chemical reaction and have 5 factors (Temperature, Pressure, Time, Catalyst, Stir Rate). A full factorial would require $2^5 = 32$ runs. If your budget only allows for 16 runs, you can create a "half-fraction" design.
+
+```{r doe, echo=FALSE}
+# Install if necessary: install.packages("FrF2")
+library(FrF2)
+
+# Generate a 16-run design for 5 factors
+# We can name the factors and set their high/low levels
+chem_design <- FrF2(nruns = 16, 
+                    nfactors = 5, 
+                    factor.names = list(
+                      Temp = c(100, 200),     # 100°C to 200°C
+                      Pressure = c(1, 5),     # 1 atm to 5 atm
+                      Time = c(30, 60),       # 30 mins to 60 mins
+                      Catalyst = c("A", "B"), # Type A or B
+                      StirRate = c(100, 500)  # 100 rpm to 500 rpm
+                    ),
+                    seed = 123)
+
+# View the randomized run order and factor settings
+print(chem_design)
+
+# View the design summary (shows confounding/aliasing structure)
+summary(chem_design)
+```
+
+Why this is useful: FrF2 automatically handles the complex math of "aliasing" (ensuring your main effects are not confused with your two-way interactions) and gives you a ready-to-execute list of runs.
+
+#3. algDesign:
+
+Best for Custom & Algorithmic DesignsSometimes standard designs (like RCBD or simple factorials) don't fit. Maybe you have a weird sample size, constraints on your combinations (e.g., you can't have High Temperature AND High Pressure), or categorical variables with 3 levels mixed with continuous variables. algDesign uses computer algorithms to find the "optimal" design (usually D-optimal) from a candidate set of all possible runs.Worked Example: D-Optimal Design for a Constrained BudgetYou have 3 factors, each with 3 levels. A full factorial is $3 \times 3 \times 3 = 27$ runs. You only have the budget to run exactly 12 experiments, and you want to estimate a quadratic model.
+
+```{r alpha, echo=FALSE}
+# Install if necessary: install.packages("algDesign")
+library(algDesign)
+
+# Step 1: Generate the full candidate space (all 27 possible combinations)
+candidate_set <- gen.factorial(levels = 3, nVars = 3, varNames = c("X1", "X2", "X3"))
+
+# Step 2: Use the Federov exchange algorithm to find the best 12 runs
+# We specify the model we want to fit: ~ quad(X1, X2, X3) means we want main effects and quadratic terms
+optimal_design <- optFederov(~ quad(X1, X2, X3), 
+                             data = candidate_set, 
+                             nTrials = 12, 
+                             evaluateI = TRUE)
+
+# View the selected 12 runs
+print(optimal_design$design)
+```
+
+| Package | Best Use Case | Common Designs |
+| :--- | :--- | :--- |
+| **`agricolae`** | Agriculture, ecology, biology where physical layout matters. | RCBD, Latin Square, Split-plot, Alpha designs. |
+| **`FrF2` & `DoE.base`** | Engineering, manufacturing, software A/B testing (screening many factors). | 2-level full and fractional factorials, Plackett-Burman. |
+| **`algDesign`** | Experiments with tight budgets, weird sample sizes, or constraints. | D-optimal, A-optimal, I-optimal designs. |
+| **`edibble`** | Modern R users wanting to integrate DoE cleanly into the `tidyverse`. | Grammar of experimental design (tidy-compliant layouts). |
+

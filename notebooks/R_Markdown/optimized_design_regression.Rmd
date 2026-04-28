@@ -1,0 +1,93 @@
+---
+title: "A Guide to Optimal Experimental Designs in R"
+author: "Gemini"
+output: 
+  html_document:
+    toc: true
+    theme: united
+---
+
+## Introduction
+
+Designing experiments optimally is a fantastic way to maximize the information you extract from your data while minimizing experimental costs. Navigating the "alphabet soup" of optimal design criteria (D, A, I, c) can feel overwhelming at first, but each letter simply represents a different statistical goal you are trying to achieve.
+
+Here is a breakdown of what these designs do, the math behind them, and the best R packages to generate them.
+
+## The Engine of Optimal Design: The Information Matrix
+
+Before diving into specific criteria, we need to look at the design matrix, $X$. In a linear model $y = X\\beta + \\epsilon$, the matrix $X$ contains all your experimental runs and model terms. 
+
+The core of optimal design is the **Information Matrix**, defined as $X^T X$. The variance-covariance matrix of your estimated parameters ($\\beta$) is proportional to the inverse of the information matrix:
+
+$$\\text{Var}(\\hat{\\beta}) \\propto (X^T X)^{-1}$$
+
+All alphabetic optimal designs work by applying a specific mathematical operation to $(X^T X)^{-1}$ to minimize the variance (uncertainty) in your experiment.
+
+## The Criteria Explained
+
+### 1. D-optimal Design (Determinant)
+* **The Goal:** Precise parameter estimation. D-optimal designs are the most common optimal designs. They try to minimize the overall uncertainty of the estimated coefficients in your model.
+* **The Math:** It minimizes the determinant of the covariance matrix, $|(X^T X)^{-1}|$, which is equivalent to maximizing the determinant of the information matrix, $|X^T X|$. 
+* **Geometric Meaning:** It minimizes the volume of the joint confidence ellipsoid around the parameter estimates. It actively pushes design points to the extremes (the corners and edges) of your design space.
+
+### 2. A-optimal Design (Average/Trace)
+* **The Goal:** Minimizing the average variance of parameter estimates.
+* **The Math:** It minimizes the trace (the sum of the diagonal elements) of the covariance matrix, $\\text{Tr}((X^T X)^{-1})$.
+* **When to use:** Use A-optimal when you care about the average precision of all your coefficients equally, rather than the joint precision (which D-optimal handles). It often results in designs similar to D-optimal, but doesn't penalize correlations between parameter estimates as heavily.
+
+### 3. I-optimal Design (Integral/Prediction)
+* **The Goal:** Precise predictions over the entire design space. (Note: Sometimes called V-optimal).
+* **The Math:** It minimizes the average prediction variance across the defined region of interest $R$. 
+$$\\text{Minimize} \\int_{R} x^T(X^T X)^{-1}x \\, d\\mu(x)$$
+* **When to use:** This is the gold standard for **Response Surface Methodology (RSM)**. If your goal is to map out a process, build a predictive model, or find a continuous optimal operating condition (rather than just screening for which factors matter), I-optimal designs are superior to D-optimal designs because they place more points in the interior of the design space.
+
+### 4. c-optimal Design (Contrast/Custom)
+* **The Goal:** Minimizing the variance of a specific parameter or a specific linear combination of parameters.
+* **The Math:** Given a vector of weights $c$, it minimizes $c^T (X^T X)^{-1} c$.
+* **When to use:** Use this when you have a very specific, singular goal. For example, if you are testing five drugs but you only care about the variance of the difference between Drug A and Drug B (a specific contrast), a c-optimal design will sacrifice information about the other drugs to give you the most precise estimate of that exact difference.
+
+## R Packages for Optimal Design
+
+R has a rich ecosystem for experimental design. Here are the top packages:
+
+### 1. `skpr` (Highly Recommended)
+`skpr` is a modern, incredibly powerful, and user-friendly package for generating and evaluating optimal designs. It integrates well with the tidyverse and even includes a Shiny GUI.
+* **Capabilities:** D, I, A, Aliased D, E, T, and G-optimal designs. It natively handles split-plot designs, constraints, and custom candidate sets.
+* **Why use it:** It calculates I-optimal designs very efficiently and has excellent visualization tools for statistical power and variance fractions.
+
+### 2. `AlgDesign`
+This is the classic, foundational R package for optimal design, built around the Federov exchange algorithm.
+* **Capabilities:** `optFederov()` handles D-, A-, and I-optimal designs. `optMonteCarlo()` is used for continuous design spaces.
+* **Why use it:** It is rock-solid and deeply integrated into many older R scripts and tutorials. 
+
+### 3. `OptimalDesign`
+A specialized package focused on the calculation of D-, A-, I-, and c-optimal designs, specifically using state-of-the-art algorithms (like multiplicative algorithms and mixed-integer linear programming). 
+* **Why use it:** Excellent for exact designs and when you need to strictly calculate c-optimal designs, which are sometimes absent in broader packages.
+
+## A Quick Example in `skpr`
+
+Here is how easily you can generate and compare a D-optimal and I-optimal design for a simple quadratic model using `skpr`:
+
+```{r skpr, echo=FALSE}
+# Install and load skpr
+# install.packages("skpr")
+library(skpr)
+
+# 1. Define the candidate space (e.g., 2 continuous factors)
+candidate_set = expand.grid(x1 = seq(-1, 1, by = 0.1), 
+                            x2 = seq(-1, 1, by = 0.1))
+
+# 2. Generate a 12-run D-optimal design for a quadratic model
+d_opt = gen_design(candidate_set, 
+                   model = ~ x1 + x2 + I(x1^2) + I(x2^2) + x1:x2, 
+                   trials = 12, 
+                   optimality = "D")
+
+# 3. Generate a 12-run I-optimal design for the same model
+i_opt = gen_design(candidate_set, 
+                   model = ~ x1 + x2 + I(x1^2) + I(x2^2) + x1:x2, 
+                   trials = 12, 
+                   optimality = "I")
+
+# You can then use eval_design() to compare their power and variance
+```

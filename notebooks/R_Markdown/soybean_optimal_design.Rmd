@@ -1,0 +1,96 @@
+---
+title: "Optimizing a Soybean Nitrogen Trial with D-Optimal Design"
+author: "Gemini"
+output: 
+  html_document:
+    toc: true
+    theme: united
+---
+
+## Introduction
+
+Designing an agricultural trial with 20 categorical levels (varieties) and a continuous factor (nitrogen) is a perfect use case for optimal design. Because testing all combinations with adequate replication can quickly blow up your budget, an optimal design ensures you get the maximum statistical power out of the exact number of plots you have available.
+
+Because your primary goal is likely estimating the specific effects of each variety and how they respond to nitrogen—rather than mapping a continuous physical surface—a **D-optimal design** is the best choice here. 
+
+Here is the step-by-step approach to building and optimizing this design using the `skpr` package in R.
+
+## Step 1: Define the Candidate Space
+
+The candidate space is every possible combination of your factors. 
+
+* **Variety:** Categorical with 20 levels. 
+* **Nitrogen:** Continuous, but restricted to 4 specific levels. We will use standard equidistant intervals: 0, 50, 100, and 150 N/ha. 
+
+A full factorial design (every variety at every nitrogen level) would require 80 runs (20 * 4).
+
+## Step 2: Define Your Statistical Model
+
+The algorithm needs to know what you intend to calculate at the end of the season. For fertilizer trials, biological responses are rarely linear; plants usually exhibit diminishing returns at high N levels. Therefore, your model should include:
+
+1.  **Main effect of Variety**
+2.  **Linear effect of Nitrogen**
+3.  **Quadratic effect of Nitrogen** (to capture the "curve" or plateau of crop yield)
+4.  **Interaction between Variety and Nitrogen** (to see if certain varieties respond better to high/low N)
+
+**Formula:** `~ Variety + Nitrogen + I(Nitrogen^2) + Variety:Nitrogen`
+
+## Step 3: Determine Your Budget and Constraints
+
+You need to know two physical constraints before running the algorithm:
+
+* **Run Budget (Trials):** How many plots do you actually have? To fit the model above, you need a bare minimum of 41 runs (Degrees of freedom: 1 for intercept + 19 for Variety + 1 for N + 1 for N^2 + 19 for interaction). To have enough power and account for error, you ideally want **60 to 80+ runs**.
+* **Blocking:** Are your plots spread across different fields, greenhouses, or distinct soil types? If so, you must include a blocking factor so the algorithm distributes the varieties fairly across the good/bad soil.
+
+## Step 4: Generate the D-Optimal Design in R
+
+Here is the exact R script using `skpr` to generate this design. For this example, let's assume you have a budget of 60 plots (meaning you cannot afford a full 80-run factorial).
+
+```{r generate-design, message=FALSE, warning=FALSE}
+# Load the skpr package
+# install.packages("skpr") # Uncomment if you need to install it first
+library(skpr)
+
+# 1. Define the Candidate Set
+# We treat Variety as a factor and Nitrogen as a continuous numeric variable
+candidate_set <- expand.grid(
+  Variety = as.factor(paste0("V", 1:20)), 
+  Nitrogen = c(0, 50, 100, 150)
+)
+
+# 2. Define the Model
+# Includes main effects, quadratic N curve, and variety-by-nitrogen interaction
+model_formula <- ~ Variety + Nitrogen + I(Nitrogen^2) + Variety:Nitrogen
+
+# 3. Generate the D-Optimal Design
+# We are asking the algorithm to pick the absolute best 60 plots out of the possible 80
+optimal_design <- gen_design(
+  candidate_set = candidate_set,
+  model = model_formula,
+  trials = 60, 
+  optimality = "D"
+)
+
+# View the first few rows of your experimental run sheet
+head(optimal_design)
+```
+
+## Step 5: Evaluate Statistical Power
+
+Before planting, you must check if 60 plots actually give you enough statistical power (usually an 80% threshold) to detect meaningful differences in yield. 
+
+`skpr` makes this incredibly easy with Monte Carlo simulations. 
+
+```{r evaluate-design, eval=FALSE}
+# Evaluate the power of the design
+# By default, this assumes a signal-to-noise ratio of 1. 
+# You can adjust the 'effectsize' parameter based on past historical yield variance.
+power_analysis <- eval_design(optimal_design, model = model_formula, alpha = 0.05)
+
+print(power_analysis)
+```
+
+## Advanced Considerations for Your Trial
+
+* **Split-Plot Designs:** In agriculture, it is often practically impossible to randomize fertilizer levels plot-by-plot. Usually, a tractor applies one nitrogen level to a whole "strip" (whole plot), and then different varieties are planted within that strip (subplots). If you must apply nitrogen in strips, you **must** generate a split-plot optimal design. `skpr` can do this by adding the `splitplot` argument to `gen_design()`.
+* **Custom N Levels:** If the algorithm favors the extremes (mostly 0 and 150 N/ha) to satisfy the D-optimal criteria, but you physically *need* to see the mid-points, you can force the algorithm to select specific ratios by passing a custom candidate set with weighted probabilities, or simply switch to an **A-optimal** design, which sometimes distributes continuous mid-points more evenly.

@@ -1,0 +1,8 @@
+Package: dataintellengine
+Title: DataIntellEngine R Core Analytical Functions
+Version: 0.1.0
+Authors@R: person("Umesh", "Rosyara", email = "your.email@example.com", role = c("aut", "cre"))
+Description: R-based core functions for the DataIntellEngine framework, specializing in statistical modeling and data manipulation.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.2.3
