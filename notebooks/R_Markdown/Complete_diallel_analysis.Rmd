@@ -1,0 +1,80 @@
+---
+title: "Diallel Analysis Using R"
+output: html_document
+date: "2026-04-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Diallel Analysis
+
+**Complete_diallel_analysis** function Performs Griffing's Half-Diallel Analysis to estimate General Combining Ability (GCA) and Specific Combining Ability (SCA). It fits a mixed model using the \code{sommer}  package to properly pool parental variances, extracts the Best Linear Unbiased  Predictors (BLUPs), and generates a comprehensive visualization using \code{ggplot2}.
+
+```{r getpackage}
+library(devtools)
+devtools::load_all("/Users/umeshrosyara/Documents/githubdir/DataIntellEngine/r_core/")
+testfunction(4,8)
+```
+
+```{r analysisflow}
+# 1. Load the required libraries
+library(sommer)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+library(stringr)
+
+# (Make sure you have already run the complete_diallel_analysis function code here)
+
+# 2. Load the Partial Diallel Data in Wide Format
+# This matches the DATALINES from your SAS code
+partial_diallel_wide <- read.table(text = "
+P1 P2 R1 R2 R3 R4
+1 4 128.10 123.84 92.56 115.28
+1 5 128.36 119.84 103.24 129.72
+1 6 74.40 70.86 60.94 68.00
+2 5 91.52 113.96 87.26 106.98
+2 6 59.06 65.62 81.62 86.76
+2 7 84.16 109.74 102.14 94.52
+3 6 109.86 98.16 93.26 102.26
+3 7 117.20 100.28 116.16 112.52
+3 8 109.68 116.48 123.92 120.86
+4 7 53.40 60.86 74.46 69.08
+4 8 53.86 48.30 40.64 44.62
+5 8 86.62 94.18 90.32 108.16
+", header = TRUE)
+
+# 3. Transform to Long Format
+# This replaces the SAS DATA step and array loops
+partial_diallel_long <- partial_diallel_wide %>%
+  pivot_longer(
+    cols = starts_with("R"), 
+    names_to = "Rep", 
+    values_to = "Yield"
+  ) %>%
+  # Clean up the "Rep" column to just be the number (e.g., "R1" -> 1)
+  mutate(Rep = str_remove(Rep, "R"))
+
+# 4. Run the Analysis
+cat("Starting Diallel Analysis...\n")
+results <- complete_diallel_analysis(
+  data = partial_diallel_long, 
+  p1_var = "P1", 
+  p2_var = "P2", 
+  rep_var = "Rep", 
+  resp_var = "Yield", 
+  trait_name = "Grain Yield"
+)
+
+# 5. View the extracted BLUPs
+cat("\n--- General Combining Ability (GCA) ---\n")
+print(results$GCA_Estimates)
+
+cat("\n--- Specific Combining Ability (SCA) ---\n")
+print(results$SCA_Estimates)
+```
+
+
