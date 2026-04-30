@@ -1,0 +1,95 @@
+---
+title: "pedigree explorer"
+output: html_document
+date: "2026-04-30"
+---
+# User Manual: Interactive Pedigree & Relationship Matrix Explorer
+
+## Overview
+The **Interactive Pedigree & Relationship Matrix Explorer** is an R Shiny application designed for geneticists, breeders, and researchers. It provides a streamlined interface to upload raw pedigree data, automatically clean missing parental records, calculate the Additive Numerator Relationship Matrix (A-Matrix), and visualize complex family trees through interactive networks and heatmaps. 
+
+It also includes advanced ancestry tracing, allowing you to filter massive datasets down to the specific lineages of targeted individuals.
+
+---
+
+## 1. Getting Started: Data Preparation
+Before using the app, ensure your data is formatted correctly as a **CSV (Comma-Separated Values)** file. 
+
+* **Structure:** The file must contain at least three columns in this exact order:
+    1.  **Individual Name** (e.g., "Bing")
+    2.  **Parent 1** (e.g., "BlackRepublican")
+    3.  **Parent 2** (e.g., "Unknown")
+* **Headers:** It is recommended to include a header row (e.g., `Name`, `Parent1`, `Parent2`), but it is not strictly required. 
+* **Data Types:** All names should be text strings. Avoid using purely numeric IDs if possible, as they can sometimes be misclassified by statistical packages.
+
+---
+
+## 2. Using the Application
+
+### Step 1: Data Upload
+1. Launch the application.
+2. In the left-hand sidebar under **1. Data Upload**, click the **"Browse..."** button.
+3. Select your prepared CSV file. 
+4. If your file includes column names at the top, leave the **"My CSV has a header row"** box checked.
+
+### Step 2: Data Settings (Handling Missing Parents)
+Historical pedigrees often use different placeholders for unknown or unrecorded parents. The math engine requires all unknown parents to be standardized as `0`. 
+
+* Under **2. Data Settings**, review the **Missing Value Flags** text box.
+* The app defaults to intercepting: `*, ., NA, unknown, Unknown, ` (and blank spaces). 
+* If your dataset uses a unique placeholder (e.g., `-99`, `N/A`, `Lost`), add it to this comma-separated list. The app will automatically convert all matching text to `0` during processing.
+
+### Step 3: Filter Ancestry (Optional)
+If you upload a pedigree with thousands of records but only care about the lineage of a few specific individuals, use the Trimming tool. 
+
+* Under **3. Filter Ancestry**, type the exact names of the individuals you want to analyze, separated by commas (e.g., `Pop_HCxAr, AE0234`).
+* The app will perform a backward trace, discarding all unrelated individuals and keeping only your targets and their direct ancestors. 
+* *Note: Leave this box blank to process and visualize the entire uploaded dataset.*
+
+### Step 4: Process the Data
+Click the blue **"Calculate Matrix & Render Plots"** button. 
+*(A loading spinner will appear on the right side of the screen. Large datasets may take a few moments to compute the matrix and render the network.)*
+
+---
+
+## 3. Navigating the Results
+Once processing is complete, use the tabs at the top of the main window to explore your data.
+
+### Tab 1: Cleaned Pedigree Data
+This tab displays your formatted data in a searchable, paginated table. 
+* Use the **Search** bar in the top right to quickly find specific individuals.
+* Verify that your missing value flags successfully converted unknown parents to `0`.
+
+### Tab 2: A-Matrix Heatmap
+This tab provides an interactive heat map of the Numerator Relationship Matrix, showing the additive genetic relatedness between all individuals.
+* **Color Scale:** White represents 0 relatedness. Dark blue represents high relatedness/inbreeding.
+* **Interactivity:** Hover your mouse over any square to see the exact relationship coefficient between the two intersecting individuals.
+* **Zoom:** Click and drag a box over a specific cluster to zoom in. Double-click to reset the view.
+* **Target Highlights:** If you used the Ancestry Filter, your target individuals will be marked on the X and Y axes with a ⭐ and **orange text**.
+
+### Tab 3: Pedigree Network
+This tab visualizes the flow of genetics as a directional graph (DAG), moving from left to right to prevent text overlap.
+* **Navigation:** Scroll your mouse wheel to zoom in and out. Click and drag the white background to pan around the graph.
+* **Node Dragging:** If lines are tangled, click and drag any individual box to move it to a clearer space.
+* **Highlighting:** Hover over any individual to instantly highlight their immediate parents and offspring while fading the rest of the network.
+* **Target Highlights:** If you used the Ancestry Filter, your target individuals will appear as **orange boxes with white text**. All ancestors will be light blue.
+* **Search Dropdown:** Use the "Select by id" dropdown at the top of the plot to instantly locate and zoom in on a specific individual.
+
+---
+
+## 4. Exporting Your Work
+Once the data has successfully processed, a new **Export Results** section will appear at the bottom of the left sidebar.
+
+* **Download Pedigree:** Click this green button to download the cleaned, standardized (and optionally trimmed) 3-column pedigree as a CSV file.
+* **Download Matrix:** Click this green button to download the full A-Matrix. The matrix will export as a CSV grid, with the individual names perfectly aligned as row names and column headers.
+
+---
+
+## 5. Troubleshooting
+
+* **Error: "Uploaded data must have at least 3 columns"**
+    * Your CSV is improperly formatted. Open it in Excel or a text editor to ensure it is separated into exactly three columns (Individual, Parent1, Parent2).
+* **Error: "Matrix Calculation Failed"**
+    * This usually means a missing value slipped through. Double-check your raw data for unique missing value placeholders and add them to the "Missing Value Flags" box before reprocessing.
+* **Error: "No targets found. Check spelling."**
+    * The names entered in the "Target Individuals" box do not perfectly match the names in your CSV. The search is case-sensitive. Ensure there are no accidental spaces before or after the names in your raw data.

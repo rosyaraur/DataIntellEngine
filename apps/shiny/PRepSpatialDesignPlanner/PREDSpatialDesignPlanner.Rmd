@@ -1,0 +1,87 @@
+---
+title: "P-RepTrialDesign"
+output: html_document
+date: "2026-04-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+***
+
+# User Guide: Interactive P-Rep Spatial Trial Designer
+
+## Overview
+The **Interactive P-Rep Spatial Trial Designer** is an R Shiny application built to automate the layout and randomization of Partially Replicated (P-Rep) multi-environment trials (MET). 
+
+Unlike traditional augmented designs, this tool operates on a **grid-first, inventory-driven basis**. It automatically calculates the physical dimensions of your field, allocates a user-defined proportion of check varieties uniformly across spatial blocks, and maximizes the number of unique experimental lines planted by checking your current seed inventory.
+
+## Prerequisites
+To run this application, you must have R and RStudio installed, along with the following packages:
+* `shiny`
+* `ggplot2`
+* `DT`
+
+If you do not have these installed, run the following command in your R console before launching the app:
+`install.packages(c("shiny", "ggplot2", "DT"))`
+
+---
+
+## Step 1: Prepare Your Data Files
+The application requires two standard CSV files. **The app reads these files strictly by column position (the first 4 columns).** The exact header names do not matter, but the data must be in this exact order.
+
+### 1. Genotypes / Seed Inventory CSV
+This file contains the list of varieties to be planted and their available seed count.
+* **Column 1 (Name):** The unique identifier for the genotype (e.g., `Line101`, `Check_A`).
+* **Column 2 (Type):** Must be exactly `Check` or `Line`. 
+* **Column 3 (Max Reps/Block):** The maximum number of times this specific entry can appear in a single spatial block. *(Usually `1` for lines in a P-Rep design).*
+* **Column 4 (Seed Available):** The total number of plots worth of seed you have available globally. *(Note: You can leave this blank or type `NA` for Checks, and the system will assume infinite seed).*
+
+### 2. Locations CSV (Optional but Recommended)
+While you can manually type location parameters into the app, you can also upload a pre-filled Locations CSV to save time. It must contain these 6 columns:
+* **Column 1 (Environment):** The name of the location (e.g., `Howell`).
+* **Column 2 (Reps):** *Note: P-Rep math ignores this column since the field size is determined strictly by Row x Range. It is kept here so you can use the same CSV files for Augmented/Alpha designs.*
+* **Column 3 (Row):** The total number of physical rows in the field.
+* **Column 4 (Range):** The total number of physical ranges (columns) in the field.
+* **Column 5 (Block_Dir):** The direction to cut spatial blocks. Must be `Row` or `Range`.
+* **Column 6 (Block_Dim):** The size of the spatial block in that direction (e.g., `2` means "2 rows per block").
+
+---
+
+## Step 2: Using the Application
+
+### The Sidebar (Inputs & Global Settings)
+1.  **Upload Genotypes CSV:** Click "Browse" to upload your seed inventory file.
+2.  **Target Check Proportion:** Set the percentage of the field you want dedicated to check varieties. For example, `0.20` will ensure roughly 20% of the total plots in every location are assigned to checks, distributed uniformly across your spatial blocks.
+3.  **Random Seed:** Set a number (e.g., `42`) if you want the randomization to be exactly reproducible in the future. 
+
+### The Main Panel (Locations & Generation)
+1.  Navigate to the **"1. Location Parameters"** tab.
+2.  Use the **"+ Add Environment"** button to create rows for each of your field locations. 
+3.  Fill in the dimensions (Rows, Ranges, Block Direction, Block Dimension). **Do not leave any numeric fields blank**, or the app will throw an error to prevent a crash.
+4.  Once your locations are configured, click the blue **"Generate P-Rep Design"** button in the sidebar.
+
+---
+
+## Step 3: Understanding the Outputs
+
+Once generated, navigate through the tabs in the main panel to review and export your trial data:
+
+* **Tab 2: Field Map Layout:** Provides a visual, color-coded map of your field. 
+    * Colors represent the distinct spatial blocks.
+    * **Checks** are highlighted with a dark red background and bold white text for immediate quality assurance.
+* **Tab 3: Trial Plan (Export):** The master dataset mapping every plot number to its physical row, range, spatial block, and assigned treatment. Click **"Download Field Plan CSV"** to export this data for your planting software or database (e.g., Prism).
+* **Tab 4: Remaining Seed Inventory:** Shows exactly how much seed (in plot equivalents) is left for every experimental line after the randomization is complete. Useful for planning future nurseries or late-season additions.
+* **Tab 5: Replication Summary:** A cross-tabulated matrix showing every genotype, its total globally planted plots, and exactly how many times it was planted in each specific environment. Checks are automatically sorted to the top of the list.
+
+---
+
+## Troubleshooting & Safety Features
+
+The app includes several built-in safety checks to prevent malformed trial designs:
+* **"Error: Blank or Zero Fields"**: If you accidentally delete a number in the Location Parameters tab, the app will stop and highlight which environment needs to be fixed.
+* **"Error: Wrong File Uploaded"**: If you accidentally upload your Locations CSV into the Genotypes upload box, the app will detect the numeric mismatch in Column 2 and halt.
+* **"Error: Checks exceed block size"**: If your physical block dimensions (e.g., a 2-plot block) are too small to hold the required proportion of checks, you will need to either increase the `Block_Dim` parameter or lower your Check Proportion percentage.
+* **FILLER Plots**: If you run out of experimental line seed before the physical field grid is completely filled, the app will automatically assign `FILLER` to the remaining plots so the spatial map remains mathematically sound.

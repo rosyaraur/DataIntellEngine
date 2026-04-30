@@ -1,0 +1,79 @@
+---
+title: "Augumeted Design Planner"
+output: html_document
+date: "2026-04-29"
+---
+
+
+***
+
+# User Guide: Interactive Spatial Trial Designer (Augmented/Alpha Design)
+
+## Overview
+The **Interactive Spatial Trial Designer** is an R Shiny application built to automate the layout and randomization of Augmented and Alpha-lattice multi-environment trials (MET). 
+
+This tool operates on an **inventory-driven, spatial-first basis**. Instead of forcing treatments into abstract mathematical blocks, it generates your physical field grid first, cuts the field into spatial blocks based on your exact row/range dimensions, and then populates those blocks by checking your live seed inventory. It ensures your check varieties are placed uniformly while distributing your experimental lines intelligently across multiple locations.
+
+## Prerequisites
+To run this application, you must have R and RStudio installed, along with the following packages:
+* `shiny`
+* `ggplot2`
+* `DT`
+
+If you do not have these installed, run the following command in your R console before launching the app:
+`install.packages(c("shiny", "ggplot2", "DT"))`
+
+---
+
+## Step 1: Prepare Your Data Files
+The application requires a standard CSV file for your seed inventory. **The app reads this file strictly by column position (the first 4 columns).** The exact header names do not matter, but the data must be in this exact order.
+
+### Genotypes / Seed Inventory CSV
+This file contains the list of varieties to be planted, their trial limits, and their available seed count.
+* **Column 1 (Name):** The unique identifier for the genotype (e.g., `Line101`, `Check_A`).
+* **Column 2 (Type):** Must be exactly `Check` or `Line`. 
+* **Column 3 (Max Reps/Block):** The number of times this specific entry should appear in a single spatial block. *(For Checks, this dictates check density. For Augmented Lines, this is usually `1`).*
+* **Column 4 (Seed Available):** The total number of plots worth of seed you have available globally. *(Note: You can leave this blank or type `NA` for Checks, and the system will assume infinite seed).*
+
+---
+
+## Step 2: Using the Application
+
+### The Sidebar (Inputs & Global Settings)
+1.  **Upload Genotypes CSV:** Click "Browse" to upload your seed inventory file.
+2.  **Max Reps Per Location (Experimental Lines):** This global parameter controls seed distribution. If set to `1`, the engine will plant a maximum of 1 plot of an experimental line at a given location. Any leftover seed is carried over and prioritized for your *next* location, ensuring lines are tested across broad environments rather than dumped into a single field.
+3.  **Random Seed:** Set a number (e.g., `42`) if you want the randomization to be exactly reproducible in the future. 
+
+### The Main Panel (Locations & Generation)
+1.  Navigate to the **"1. Location Parameters"** tab.
+2.  Use the **"+ Add Environment"** button to create rows for each of your field locations. 
+3.  Fill in the dimensions:
+    * **Environment:** Name of the location.
+    * **Reps:** The targeted number of replications/blocks for this field.
+    * **Row & Range:** The total physical dimensions of the field.
+    * **Block_Dir & Block_Dim:** How to cut the spatial blocks. For example, setting Dir to `Row` and Dim to `2` means every 2 rows constitutes one complete spatial block.
+4.  **Do not leave any numeric fields blank**, or the app will throw an error.
+5.  Once your locations are configured, click the blue **"Generate Trial Design"** button in the sidebar.
+
+---
+
+## Step 3: Understanding the Outputs
+
+Once generated, navigate through the tabs in the main panel to review and export your trial data:
+
+* **Tab 2: Field Map Layout:** Provides a visual, color-coded spatial map of your field. 
+    * Colors represent the distinct spatial blocks (replications).
+    * **Checks** are highlighted with a dark red background and bold white text for immediate quality assurance.
+* **Tab 3: Trial Plan (Export):** The master dataset mapping every plot number to its physical row, range, spatial block, and assigned treatment. Click **"Download Field Plan CSV"** to export this data for your database (e.g., Prism) or planting software.
+* **Tab 4: Remaining Seed Inventory:** Shows exactly how much seed (in plot equivalents) is left for every experimental line after the randomization is complete. 
+* **Tab 5: Replication Summary:** A cross-tabulated matrix showing every genotype, its total globally planted plots, and exactly how many times it was planted in each specific environment. Checks are automatically sorted to the top of the list.
+
+---
+
+## Troubleshooting & Safety Features
+
+The app includes built-in safety checks to prevent malformed trial designs:
+* **"Error: Blank or Zero Fields"**: If you accidentally delete a number in the Location Parameters tab, the app will stop and highlight which environment needs to be fixed.
+* **"Error: Wrong File Uploaded"**: If you accidentally upload a Locations CSV into the Genotypes upload box, the app will detect the numeric mismatch in Column 2 and halt.
+* **"Error: Checks exceed block size"**: If your physical block dimensions (e.g., a 4-plot block) are too small to hold the required number of checks dictated by your Genotype CSV, you will need to either increase the `Block_Dim` parameter or reduce the `Max Reps/Block` for your checks.
+* **FILLER Plots**: If you run out of experimental line seed before the physical field grid is completely filled, the app will automatically assign `FILLER` to the remaining empty plots so the spatial map remains mathematically sound.

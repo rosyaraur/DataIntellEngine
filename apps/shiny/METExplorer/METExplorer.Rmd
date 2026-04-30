@@ -1,0 +1,75 @@
+---
+title: "MET Spatial Explorer"
+output: html_document
+date: "2026-04-29"
+---
+
+***
+
+# Multi-Environment Trial (MET) Spatial Explorer
+
+## Overview
+The MET Spatial Explorer is an interactive web application built in R (Shiny) designed for plant breeders, agronomists, and quantitative geneticists. It provides rapid visual diagnostics for Multi-Environment Field Trials, allowing users to explore Genotype-by-Environment (GxE) interactions, diagnose spatial field heterogeneity, and assess genotype stability across different testing environments.
+
+## Installation & Setup
+To run this application, you must have R installed along with the following packages:
+```R
+install.packages(c("shiny", "ggplot2", "dplyr", "tidyr", "corrplot", "viridis", "plotly"))
+```
+Save the application code to a file named `app.R` and execute it using:
+```R
+shiny::runApp("app.R")
+```
+
+---
+
+## 1. Data Input & Requirements
+The application operates in two modes:
+
+* **Use Simulated Example:** Generates a robust dummy dataset on the fly. This data includes a deliberate spatial fertility gradient (e.g., higher values in the top-right of the field) to demonstrate the app's diagnostic capabilities.
+* **Upload Own Dataset:** Allows you to upload your own field trial results. 
+
+**CSV Upload Requirements:**
+If uploading your own dataset, the CSV file must contain the following exact column names (case-sensitive):
+1.  `Trait`: Name of the phenotypic trait (e.g., Yield, Height).
+2.  `Loc`: Environment or Location ID.
+3.  `Row`: Spatial Y-coordinate of the plot.
+4.  `Range`: Spatial X-coordinate of the plot (sometimes called Column).
+5.  `Genotype`: Identifier for the variety, line, or treatment.
+6.  `Raw`: The observed phenotypic value.
+7.  `BLUP`: The Best Linear Unbiased Predictor (the modeled genetic effect).
+8.  `Residual`: The difference between the observed value and the modeled value.
+
+---
+
+## 2. Understanding the Metrics
+Throughout the app, you can toggle between three key metrics. Understanding these is vital for interpreting the plots:
+
+* **Raw:** The actual measured phenotype in the field. This includes the true genetic potential + environmental mean + GxE noise + spatial field variance.
+* **BLUP:** The modeled genetic value of the plant. Selecting this metric strips away the spatial noise and environmental mean, isolating the "true" genetic performance.
+* **Residual:** The un-modeled error ($Raw - Predicted$). **Diagnostic use:** If you plot residuals on the Spatial Field Map and see a clear pattern (e.g., all positive values in one corner), it indicates a spatial field trend (like a water gradient) that your statistical model failed to account for.
+
+---
+
+## 3. Features & Navigation
+
+### Tab 1: Spatial Field Map
+This interactive heatmap visualizes the physical layout of the trial at a specific location.
+* **How it works:** It maps the `Range` (X-axis) and `Row` (Y-axis) to recreate the physical field grid.
+* **Interactivity:** Hovering over any plot reveals the Genotype, exact grid coordinates, and the precise value of the selected metric.
+* **Use Case:** Agronomists use this to visually spot edge effects, soil fertility gradients, or planter errors. If the statistical model is adequate, plotting the `BLUP` should look like random noise, while plotting `Raw` or `Residuals` might reveal underlying field trends.
+
+### Tab 2: Location Correlation
+This plot displays a correlogram (correlation matrix) comparing how environments relate to one another based on the selected metric.
+* **How it works:** It calculates the Pearson correlation coefficient between locations and uses hierarchical clustering to group similar environments together visually.
+* **Use Case:** * Correlating **Raw** or **BLUP** values helps identify "Mega-Environments" (locations that behave similarly and rank genotypes in the same order).
+    * Correlating **Residuals** across locations is a diagnostic check; they should generally have zero correlation. High correlation might indicate systematic errors in data collection.
+
+### Tab 3: Genotype vs Env Average (Stability Analysis)
+This interactive plot visualizes genotype stability and environmental responsiveness, inspired by Finlay-Wilkinson regression.
+* **How it works:** The X-axis represents the *Environmental Index* (the average performance of all plants at a specific location). The Y-axis represents the specific performance of your selected genotypes. 
+* **The 1:1 Reference Line:** A dashed diagonal line represents the exact environmental average ($y = x$).
+* **Use Case:**
+    * **Broad Adaptation:** A genotype line completely above the dashed line performs better than average in *every* environment.
+    * **Aggressive/Responsive:** A line with a steeper slope than the dashed line performs exceptionally well in good environments but poorly in high-stress environments.
+    * **Defensive/Stable:** A line with a flatter slope performs consistently across the board, resisting the drops seen in poor environments.
