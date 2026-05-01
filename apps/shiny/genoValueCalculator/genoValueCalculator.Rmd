@@ -1,0 +1,99 @@
+---
+title: "genoValueCalculator"
+output: html_document
+date: "2026-04-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# User Manual: Interactive Multi-Environment Trial Analysis App
+
+Welcome to the Multi-Environment Trial Analysis App! This tool is designed to help plant breeders, geneticists, and agricultural researchers easily calculate Best Linear Unbiased Predictors (BLUPs) and Best Linear Unbiased Estimators (BLUEs) from field trial data. 
+
+The app automatically builds the correct mixed-effects statistical models, handles unbalanced data, extracts broad-sense heritability, and provides interactive Genotype $\times$ Environment (GxE) visualizations.
+
+---
+
+## 1. Getting Started
+
+### Prerequisites
+To run this application locally, you must have R and RStudio installed, along with the following packages:
+```R
+install.packages(c("shiny", "DT", "ggplot2", "plotly", "lme4", "lmerTest", "emmeans", "dplyr", "tidyr"))
+```
+
+### Preparing Your Data
+Your data must be saved as a **CSV (Comma Separated Values)** file. 
+* Data should be in a "long" format (each row represents a single plot/observation).
+* Ensure there are no special characters in your column names.
+* Missing values should be left blank or coded as `NA`.
+
+---
+
+## 2. Uploading and Configuring Data
+
+Use the **Sidebar Panel** on the left side of the screen to configure your analysis.
+
+1. **Upload CSV File:** Click "Browse" to locate and upload your field data.
+2. **Column Mapping:** Once the data is uploaded, dropdown menus will appear. Map your CSV columns to the appropriate experimental design variables:
+    * **Response Variable (Y):** The trait you want to analyze (e.g., Yield, Plant Height).
+    * **Genotype Variable:** The column containing your varieties, lines, or hybrids.
+    * **Location Variable (Optional):** The site, environment, or year.
+    * **Block/Rep, Row, & Column (Optional):** Spatial design variables to correct for field variations. If you do not have these, leave them set to "None".
+3. **Calculation Method:**
+    * **BLUP (Random Effect):** Best for multi-environment breeding trials. Shrinks estimates toward the mean based on the amount of data and variance. Calculates Heritability.
+    * **BLUE (Fixed Effect):** Best for variety testing where you want the adjusted mean performance of specific, fixed lines. Calculates standard ANOVA p-values.
+4. **Confidence/Prediction Interval:** Adjust the slider to set the statistical bounds (default is 0.95 for 95% intervals).
+
+Click **Run Analysis** to execute the statistical models.
+
+---
+
+## 3. Navigating the Results
+
+The main panel is divided into four interactive tabs:
+
+### Tab 1: Data Preview
+Use this tab to verify your CSV uploaded correctly. It displays the first 50 rows of your raw dataset. You can scroll horizontally to check all columns.
+
+### Tab 2: Overall Results
+This tab calculates the **Main Effect** across the entire dataset.
+* **Heritability:** If you selected BLUP, the generalized broad-sense heritability (reliability) of the trial network is displayed at the top.
+* **Caterpillar Plot:** An interactive visualization of the genotype estimates. Hover over any point to see the exact estimate and interval bounds. Genotypes are sorted from lowest to highest performing.
+* **Results Table:** A searchable, sortable table of your final BLUP/BLUE estimates, standard errors, and interval limits.
+
+### Tab 3: Results by Environment
+This tab performs **Single-Site Analyses**. It automatically splits your dataset by the Location variable and runs the statistical model independently for each site.
+* Use this to see how a specific genotype performed in "Site A" versus "Site B" after accounting for local block/spatial effects.
+* You can use the search bar at the top of the table to filter for specific genotypes or specific locations.
+
+### Tab 4: Site Comparisons & Stability (GxE)
+This tab allows you to visually explore Genotype by Environment interactions based on raw means. 
+* **Select Genotypes:** Use the dropdown box to select up to as many genotypes as you wish to compare. 
+* **Plot Types:**
+    1. **Line Plot:** A classic "reaction norm" plot connecting genotype performance across different sites.
+    2. **Heatmap:** A grid showing performance intensity. Great for viewing many genotypes across many locations simultaneously.
+    3. **Stability Plot (Finlay-Wilkinson):** Maps genotype performance against the overall "Environment Quality" (the average yield of all plots at that site). 
+        * **The Red Dashed Line:** Represents "Average Stability" (Slope = 1.0). 
+        * **Steeper Lines:** Indicate highly responsive genotypes (do poorly in bad environments, but exceptionally well in good environments).
+        * **Flatter Lines:** Indicate stable/robust genotypes (consistent performance regardless of environment).
+
+---
+
+## 4. Downloading Data
+
+At the bottom of the left sidebar, you will find two download buttons:
+
+* **Download Overall Avg:** Exports the CSV file containing the main effects (the data shown in the "Overall Results" tab).
+* **Download By Environment:** Exports the CSV file containing the specific estimates for every genotype at every individual location (the data shown in the "Results by Environment" tab).
+
+---
+
+## 5. Troubleshooting & Tips
+
+* **Model Fails to Run:** Ensure your Response Variable (Y) is completely numeric. If R detects text (like "< 10" or "Missing") in a numeric column, it will force the entire column to read as text, causing the mixed model to fail.
+* **Singular Fit Warnings:** If your dataset is very small or has almost no variation between blocks/rows, `lme4` may throw a "singular fit" warning in the R console. The app will still output results, but it means the variance component for one of your spatial terms was estimated at exactly zero.
+* **Missing Data:** Mixed models (`lmer`) handle unbalanced data and missing plots automatically. You do not need to delete rows with missing data before uploading.

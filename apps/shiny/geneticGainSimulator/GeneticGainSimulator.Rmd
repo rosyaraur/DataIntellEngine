@@ -1,0 +1,62 @@
+---
+title: "Genetic gain simulator"
+output: html_document
+date: "2026-04-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Genetic Gain Breeding Program Simulator: Multi-Environment Trials
+**Version:** 1.0 | **Language:** R (Shiny)
+
+## 1. Overview
+The Breeding Program Simulator is an interactive biometrics tool designed to model long-term genetic gain across multiple selection cycles. It simulates a Multi-Environment Trial (MET) framework, allowing plant and animal breeders to visualize how manipulating population sizes, testing environments, and selection intensities impacts both the phenotypic distribution and the underlying True Breeding Values (TBV).
+
+## 2. Prerequisites
+To run this application, you must have R or RStudio installed along with the following packages:
+* `shiny`: For the interactive web application framework.
+* `ggplot2`: For rendering the box plots, regression lines, and line charts.
+* `dplyr`: For data manipulation and summary statistics.
+* `tidyr`: For expanding data grids across lines, environments, and replications.
+* `DT`: For rendering interactive, searchable HTML data tables.
+
+## 3. User Interface (UI) Controls
+The application is controlled via the left-hand sidebar, which is divided into three functional categories:
+
+### A. Trial Design
+These parameters define the physical and temporal scope of the breeding program.
+* **Number of Lines per Cycle:** The base population size generated and evaluated in each cycle.
+* **Environments (Locations):** The number of distinct testing environments ($E$) to simulate per cycle.
+* **Replications per Env:** The number of independent plots per line within a single environment, used to partition environmental error.
+* **Selection Cycles:** The total number of consecutive breeding cycles to simulate (from base population $C0$ to $C_n$).
+
+### B. Variance Components
+These inputs define the biological and environmental variance pools of the base population. The application uses these to simulate individual plot phenotypes using the formula: $P = \mu + G + E + G \times E + e$.
+* **Base Population Mean Yield:** The starting phenotypic mean ($\mu$) in cycle 0.
+* **Genetic Variance (Var_G):** The additive genetic variance representing usable genetic diversity ($G$).
+* **Environment Variance (Var_Env):** Variance attributed to macro-environmental differences ($E$).
+* **GxE Variance (Var_GxE):** Variance caused by the interaction between specific genotypes and environments.
+* **Plot Error Variance (Var_E):** Unexplained random residual error for individual plots ($e$).
+
+### C. Selection Parameters
+These sliders control the genetic trajectory and the intensity of the breeding program.
+* **Selection Fraction (Top %):** The proportion of elite lines advanced to the next cycle (e.g., $0.10$ advances the top 10%). Selection is strictly based on the marginal line mean across all environments and replications.
+* **Expected % Gain / Cycle:** The theoretical compounding growth rate of the mean True Breeding Value ($\mu_t = \mu_{t-1} \times (1 + \text{gain})$.
+* **% Variance Decay / Cycle:** Models the Bulmer effect and allele fixation by shrinking the additive genetic variance by this percentage each cycle.
+
+## 4. Analytical Outputs (Main Panel Tabs)
+Once the "Run Simulation" button is clicked, the application populates five tabs for comprehensive biometric analysis:
+
+* **Horizontal Histograms:** Utilizes a custom Base R graphics function to plot continuous, side-by-side vertical density curves overlaid on horizontal bar charts. This creates a distinct "waterfall" effect, making it easy to track shifts in the population mean and identify the emergence of transgressive segregants.
+* **Box Plots:** A standard `ggplot2` visualization showing the phenotypic variance and interquartile ranges across cycles. Useful for quickly identifying outliers and observing the compression of variance due to the decay parameter.
+* **Regression Analysis:** Plots the population averages over time. It compares the raw Phenotypic Mean against the Genotypic Mean (TBV) using standard linear regression (`lm`), illustrating how environmental noise masks true genetic progress.
+* **Genetic Gain (TBV):** Isolates the True Breeding Values (removing all $E$ and $G \times E$ noise). It plots the trajectory of the overall population mean against the mean of the specifically selected elite lines for that cycle, visualizing the realized selection differential.
+* **Summary Metrics:** An interactive data table summarizing exactly what happened in each cycle, including standard deviations, mean phenotypes, and the isolated Realized Genetic Gain.
+
+## 5. Backend Logic Notes
+* **Monte Carlo Execution:** The heavy simulation functions are isolated inside an `eventReactive` wrapper. The data is only re-calculated when the user explicitly clicks the "Run Simulation" button, ensuring the UI remains responsive while adjusting sliders.
+* **Truncation Selection Constraints:** The model imposes a hard biological constraint `ifelse(phenotype < 0, 0, phenotype)` to prevent impossible negative yields in highly variable simulations.
+* **Progress Tracking:** The app utilizes Shiny's `withProgress()` wrapper to provide visual feedback to the user during computationally heavy multi-cycle simulations.

@@ -1,0 +1,101 @@
+---
+title: "TrialNetworkOptimizer"
+output: html_document
+date: "2026-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# User Manual: Breeding Network Spatial Optimizer
+
+## 1. Introduction
+The **Breeding Network Spatial Optimizer** is an interactive R Shiny application designed for plant breeders and agricultural data scientists. Its primary purpose is to evaluate Multi-Environment Trial (MET) networks and identify redundant testing locations. 
+
+By utilizing hierarchical clustering and mixed-model (LOLO: Leave-One-Location-Out) analysis, this tool helps programs reduce testing costs without sacrificing the prediction accuracy of their genetic pipeline.
+
+---
+
+## 2. Setup and Installation
+To run this application locally, you must have R and RStudio installed. 
+
+Install the following required packages in your R console before running the app (`app.R`):
+```r
+install.packages(c("shiny", "DT", "ggplot2", "dplyr", "tidyr", "lme4", "bslib", "ggdendro", "leaflet"))
+```
+
+---
+
+## 3. Data Requirements
+The application can generate realistic simulated data, but to evaluate your own breeding network, you must upload two strictly formatted CSV files. 
+
+**CRITICAL RULE:** The `Location` names in both files must match *exactly* (case-sensitive, identical spacing).
+
+### File 1: Yield Data (`.csv`)
+Must contain the plot-level phenotypic data.
+* `Year`: (Numeric) e.g., 2022
+* `Location`: (Text) e.g., "Ames"
+* `Environment`: (Text) Unique site-year ID, e.g., "Ames_2022"
+* `Rep`: (Numeric) Replication block, e.g., 1, 2
+* `Genotype`: (Text) Variety ID, e.g., "Check_01", "Exp_99"
+* `Type`: (Text) Must be exactly `"Check"` or `"Experimental_Line"`.
+* `Yield_bu_ac`: (Numeric) Plot yield.
+
+### File 2: Geo-Coordinates (`.csv`)
+Must contain the spatial data for the Leaflet map.
+* `Location`: (Text) Must match File 1 exactly.
+* `Lat`: (Numeric) Latitude in decimal degrees (e.g., 42.0308).
+* `Lon`: (Numeric) Longitude in decimal degrees (e.g., -93.6319).
+
+---
+
+## 4. Interface Guide
+
+### The Control Sidebar (Left Panel)
+* **Data Source:** Toggle between "Simulate" (to test the app's features) and "Upload Target Data" (for your actual analysis).
+* **Sliders (Simulate Mode):** Adjust the number of locations to simulate.
+* **Generate/Upload Button:** Click to load the data into the application's memory.
+
+### Tab 1: Data Explorer
+A searchable, filterable data table of the active dataset. Use this to verify that your data uploaded correctly and that there are no missing (`NA`) values in your yield column.
+
+### Tab 2: Environment Clustering
+Displays a hierarchical dendrogram grouping locations based on how similarly the **"Check"** varieties performed across multiple years.
+* **How to use:** Look for branches that are very short and group tightly together. These represent locations with highly similar Genotype $\times$ Environment ($G \times E$) interactions. 
+* **Interactive Feature:** Click directly on a location name at the bottom of the tree to instantly jump to Tab 4 and test the impact of dropping it.
+
+### Tab 3: Spatial Network Map
+An interactive geographic map of your trial network.
+* **Pre-Analysis:** Shows blue markers for all active locations.
+* **Post-Analysis (After running Tab 4):** Transforms into an impact heat map. Markers are color-coded from **Red (Critical Anchor)** to **Green (Redundant Niche)**.
+* **Interactive Feature:** Click any marker on the map to jump to Tab 4 and view its specific drop metrics.
+
+### Tab 4: Optimization & Drop Analysis
+The computational core of the application. 
+* **Targeted Drop Insight:** Shows the immediate prediction accuracy if the location you just clicked (on the map or dendrogram) is removed.
+* **Run Full Optimization Loop:** Executes a Leave-One-Location-Out (LOLO) mixed-effects model. It systematically drops each location, recalculates the entire network's Best Linear Unbiased Predictors (BLUPs), and compares them to the full dataset.
+* **Lollipop Chart:** Visualizes the sorted results. Bars extending furthest to the left indicate critical environments.
+
+---
+
+## 5. Standard Operating Workflow
+
+Follow this step-by-step process to make a data-driven decision on budget cuts:
+
+1. **Load Data:** Upload your custom yield and coordinate templates.
+2. **Cluster Analysis:** Go to **Tab 2**. Note any pairs or triplets of locations that cluster tightly together. (e.g., *Mankato and Rochester are tightly clustered*).
+3. **Spatial Check:** Go to **Tab 3**. Are those clustered locations physically near each other? If yes, they likely share soil and weather traits.
+4. **Run the Math:** Go to **Tab 4** and click the green **"Run Full Optimization Loop"** button. Wait for the progress bar to complete (this may take 1-3 minutes for large datasets).
+5. **Evaluate the Chart:** Look at the chart in Tab 4. 
+    * *Are Mankato and Rochester at the top of the chart (values near 1.0)?* 
+6. **Make the Call:** Return to **Tab 3**. The map is now color-coded. Click on the greenest marker among your clustered group. Read the "Targeted Drop Insight". If the accuracy remains above your program's threshold (e.g., >0.990), **you can safely drop that location from next year's trial plan.**
+
+---
+
+## 6. Interpreting the Accuracy Metric
+The metric used is the **Pearson Correlation Coefficient ($r$)** between the BLUPs calculated with all locations vs. the BLUPs calculated with one location missing.
+
+* **Critical Anchors (Red / $r < 0.985$):** This location provides unique stress data (e.g., specific disease pressure, drought). Dropping it will blind your pipeline to how genetics perform in that environment. *Do not drop.*
+* **Moderate Impact (Yellow / $0.985 < r < 0.995$):** This location adds value, but could potentially be dropped if severe budget cuts are mandatory. 
+* **Redundant (Green / $r > 0.995$):** The environmental variance at this site is already perfectly captured by other locations in your network. *Prime candidate for removal.*
