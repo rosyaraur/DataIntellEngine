@@ -1,0 +1,137 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "complete_diallel_analysis",
+      "description": "Performs Griffing's Half-Diallel Analysis to estimate General Combining Ability (GCA) and Specific Combining Ability (SCA). Fits a mixed model to pool parental variances, extracts BLUPs, and generates a heatmap visualization.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dataset_path": {
+            "type": "string",
+            "description": "File path to the diallel cross data CSV in long format."
+          },
+          "p1_var": {
+            "type": "string",
+            "description": "Column name containing Parent 1 identifiers."
+          },
+          "p2_var": {
+            "type": "string",
+            "description": "Column name containing Parent 2 identifiers."
+          },
+          "rep_var": {
+            "type": "string",
+            "description": "Column name containing Replication or Block identifiers."
+          },
+          "resp_var": {
+            "type": "string",
+            "description": "Column name containing the response/trait variable (e.g., Yield)."
+          },
+          "trait_name": {
+            "type": "string",
+            "description": "Human-readable name of the trait used for plot titles. Default is 'Trait'."
+          }
+        },
+        "required": ["dataset_path", "p1_var", "p2_var", "rep_var", "resp_var"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "sim_multistage_field",
+      "description": "Simulates yield data with customizable genetic and environmental correlation structures for multi-stage field trials.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "batch_years": {
+            "type": "string",
+            "description": "A JSON-formatted string mapping batch names to lists of years tested. Example: '{\"2014\": [2018, 2019], \"2015\": [2019, 2020]}'."
+          },
+          "n_crosses": {
+            "type": "integer",
+            "description": "Number of distinct bi-parental families (crosses) generated per batch."
+          },
+          "n_lines": {
+            "type": "integer",
+            "description": "Total number of individual progeny lines tested across the entire batch."
+          },
+          "n_env": {
+            "type": "integer",
+            "description": "Number of distinct testing environments utilized per year."
+          },
+          "n_rep": {
+            "type": "integer",
+            "description": "Number of replications (blocks) for each line within a specific year-location combo."
+          }
+        },
+        "required": ["batch_years"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "tetraploid_ml_pred",
+      "description": "Predictive Machine Learning wrapper for Tetraploid Potato Genomic Data. Uses Genotype and Phenotype data to train predictive models like Ridge, RandomForest, or GBLUP.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "geno_path": {
+            "type": "string",
+            "description": "File path to the raw genotype CSV."
+          },
+          "pheno_path": {
+            "type": "string",
+            "description": "File path to the raw phenotype CSV."
+          },
+          "env": {
+            "type": "string",
+            "description": "Environment to filter the phenotype data by (e.g., 'Hancock20')."
+          },
+          "pheno_col": {
+            "type": "string",
+            "description": "The phenotypic trait to predict (e.g., 'vine.maturity')."
+          },
+          "model_type": {
+            "type": "string",
+            "enum": ["RandomForest", "SVR_linear", "SVR_rbf", "Ridge", "GBLUP", "NeuralNetwork"],
+            "description": "The specific machine learning model architecture to use."
+          },
+          "genetic_model": {
+            "type": "string",
+            "enum": ["additive", "dominance"],
+            "description": "The genetic encoding model to apply to the genotype data."
+          }
+        },
+        "required": ["geno_path", "pheno_path", "pheno_col", "model_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "generate_gge_biplot",
+      "description": "Performs Singular Value Decomposition (SVD) on environment-centered data to generate a GGE Biplot for genotype-by-environment analysis.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dataset_path": {
+            "type": "string",
+            "description": "File path to the trial dataset CSV in wide format (Genotypes as rows, Environments as columns)."
+          },
+          "gen_col": {
+            "type": "string",
+            "description": "The column name containing the Genotype identifiers."
+          },
+          "scaling": {
+            "type": "number",
+            "enum": [1, 0, 0.5],
+            "description": "Biplot scaling method: 1 (Genotype-focused), 0 (Environment-focused), or 0.5 (Symmetrical)."
+          }
+        },
+        "required": ["dataset_path", "gen_col", "scaling"]
+      }
+    }
+  }
+]
