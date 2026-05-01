@@ -13,16 +13,37 @@ Designed with dual-accessibility in mind, it provides robust, reproducible metho
 The repository is modularized by language and function, ensuring that analytical logic remains isolated but universally accessible.
 
 ```text
-DataIntellEngine/
-├── data_catalog/         # Metadata, data dictionaries, and DVC config for large datasets
-├── python_core/          # Packaged Python tools, PostgreSQL integrations, and data pipelines
-│   ├── database/         # Schema design and query execution modules
-│   └── cleaning/         # Outlier detection and formatting scripts
-├── r_core/               # Advanced statistical models and visualization
-│   └── mixed_models/     # LMMs, GLMMs, and variance component analysis
-├── sas_macros/           # Reusable SAS macros for standardized enterprise reporting
-│   └── experimental/     # Macros for Alpha design and other complex trial analytics
-├── agent_tools/          # Wrapper functions specifically designed for AI Agent function calling
-├── notebooks/            # Jupyter and R Markdown example workflows
-├── .gitignore            # Language-specific and data-exclusion rules
-└── README.md             # Engine documentation
+DataIntelEngine/
+│
+├── 1_agent_brain/              <-- NEW: The AI Orchestrator Zone
+│   ├── main_orchestrator.py    # The 'while True' loop we built
+│   ├── tools_schema.json       # The LLM's Instruction Manual
+│   ├── tool_registry.py        # The Python bridge to your core math
+│   └── agent_tools/            <-- Move your current 'agent_tools' inside here
+│
+├── 2_core_libraries/           <-- MOVED: The Math & Statistics Zone
+│   ├── python_core/            # Your native Python biometric functions
+│   ├── sas_core/               # Your SAS scripts
+│   └── r_core/                 # Your installable R package
+│       ├── DESCRIPTION
+│       ├── NAMESPACE
+│       ├── R/
+│       │   └── complete_diallel_analysis.R
+│       └── mixed_models/
+│
+├── 3_user_interfaces/          <-- RENAMED: 'apps'
+│   ├── shiny/                  # The Breeding Network Spatial Optimizer UI
+│   └── streamlit/              # Python-based dashboards
+│
+├── 4_workspace/                <-- RENAMED: 'data_catalog'
+│   ├── raw_data/               # Replaces 'example_data' (CSVs, SQL dumps)
+│   └── agent_outputs/          # Where the AI saves the generated field maps
+│
+├── 5_research/                 <-- RENAMED: 'notebooks'
+│   ├── PythonNoteBooks/
+│   ├── R_Markdown/
+│   └── SASnotebooks/
+│
+├── setup.py                    # Keeps the Python side installable
+├── README.md
+└── LICENSE
