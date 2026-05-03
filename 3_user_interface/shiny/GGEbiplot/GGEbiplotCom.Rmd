@@ -1,0 +1,99 @@
+---
+title: "GGEbiplotCom"
+output: html_document
+date: "2026-05-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here is the complete documentation for the **Interactive Multi-Environment Trial (GGE) Analyzer** R Shiny application. You can save this as a `README.md` file or include it as a separate introductory tab within the application itself.
+
+---
+
+# User Documentation: Interactive GGE Biplot Analyzer
+
+## 1. Overview
+The **Interactive GGE Biplot Analyzer** is a web-based R Shiny application designed for plant breeders, geneticists, and agronomists to evaluate Multi-Environment Trials (MET). Powered by the standard R package `metan`, this tool allows you to upload yield data, dynamically generate robust GGE (Genotype main effect plus Genotype-by-Environment interaction) biplots, and perform visual stability and adaptability analyses.
+
+## 2. Getting Started
+
+### Prerequisites
+To run this application locally, you must have R and RStudio installed, along with the following R packages:
+```R
+install.packages(c("shiny", "metan", "tidyr", "dplyr", "ggplot2", "DT"))
+```
+
+### Running the App
+1. Save the provided R script as `app.R`.
+2. Open the file in RStudio.
+3. Click the **"Run App"** button in the top right corner of the script editor.
+
+---
+
+## 3. Data Preparation and Upload
+
+### The Built-in Practice Dataset
+By default, the application loads with the **1993 Ontario Winter Wheat Performance Trials** dataset. This allows you to explore the tool's features immediately without needing to prepare your own data.
+
+### Uploading Your Own Data
+To analyze your own trial data:
+1. Uncheck the **"Use built-in practice dataset"** box in the left sidebar.
+2. Click **"Browse"** to upload your CSV file.
+
+**Required CSV Format:**
+Your data must be uploaded in a **Long Format** CSV. It should contain at least three distinct columns:
+* **Genotype/Cultivar:** The name or ID of the genetic line.
+* **Environment:** The location, year, or specific trial condition.
+* **Response/Yield:** The numeric value of the trait measured (e.g., grain yield in t/ha).
+
+*Note: Make sure your dataset does not contain missing values (`NA`), as the Singular Value Decomposition (SVD) algorithm requires a complete matrix.*
+
+### Dynamic Column Mapping
+Once you upload your CSV, three dropdown menus will appear. Use these to tell the application which column in your dataset corresponds to the Genotype, Environment, and Response variables.
+
+---
+
+## 4. Global Settings: Scaling Method (SVP)
+In the left sidebar, you can select the **Singular Value Partitioning (SVP)** method. This mathematical setting defines how the singular values are distributed between the genotype and environment scores, which changes how you interpret the distances on the biplots:
+
+* **Genotype-focused (SVP=1):** Ideal for comparing the performance of different genotypes. The distance between two genotypes on the plot represents their actual dissimilarity.
+* **Environment-focused (SVP=2):** Ideal for comparing test environments. The angle between environment vectors accurately represents the correlation between those environments.
+* **Symmetrical Scaling (SVP=3):** The default setting. It partitions the values equally, providing a balanced, general-purpose view of both genotypes and environments.
+
+---
+
+## 5. Visualizations (Main Panel Tabs)
+
+Navigate through the tabs at the top of the main window to view different analyses:
+
+### Tab 1: Data Preview
+Displays a searchable, sortable, and paginated interactive table of the dataset currently loaded into the model. Use this to verify that your data uploaded and mapped correctly.
+
+### Tab 2: Basic Biplot
+Generates a standard GGE biplot displaying both genotypes and environments on the same axes. This gives a broad overview of the data spread and the main effects.
+
+### Tab 3: Performance & Stability
+Generates an **Average Environment Coordination (AEC)** biplot. 
+* **Interpretation:** A single-arrowed line points in the direction of the "average environment." Genotypes further down this arrow have higher average yields. The perpendicular line passing through the origin measures stability; genotypes closer to the main arrow are more highly stable across all environments.
+
+### Tab 4: Polygon (Which-Won-Where)
+Generates a polygon view by connecting the genotypes furthest from the origin and drawing perpendicular lines to divide the plot into sectors (mega-environments).
+* **Interpretation:** The genotype at the vertex of each sector is the highest-yielding genotype for the specific environments that fall within that sector. 
+
+### Tab 5: Rank Environments
+Evaluates the test environments based on two metrics:
+* **Discriminativeness:** The length of the environment vector (how far it is from the center). Longer vectors mean the environment is better at showing differences between genotypes.
+* **Representativeness:** The angle between the environment vector and the average environment axis. Smaller angles indicate the environment is highly representative of the overall target region. 
+
+---
+
+## 6. Troubleshooting
+
+* **Error: "requires numeric/complex matrix/vector arguments"**
+    * **Cause:** Your Response/Yield column contains text or non-numeric characters.
+    * **Fix:** Clean your CSV file to ensure the yield column only contains numbers.
+* **App crashes upon file upload:**
+    * **Cause:** The dataset contains missing data (`NA`s), or the column mapping was incorrect before the model tried to run.
+    * **Fix:** Ensure your dataset is a complete matrix (every genotype is tested in every environment). Impute missing data prior to upload if necessary.

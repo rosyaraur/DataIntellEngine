@@ -1,0 +1,94 @@
+---
+title: "GEStabilityAnalysis"
+output: html_document
+date: "2026-05-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# GxE Stability Analysis Engine: User Manual
+
+Welcome to the **GxE Stability Analysis Engine**, an interactive R Shiny application designed for quantitative geneticists and plant breeders. This tool performs multi-environment stability analysis by partitioning phenotypic variance into expected variance components based on the foundational Comstock and Robinson (1952) model, enhanced with modern Mixed Model (REML) capabilities.
+
+---
+
+## 1. Overview
+The application evaluates Genotype by Environment ($G \times E$) interactions to determine crop stability and estimate broad-sense heritability. It dynamically supports both **Multi-Year ($G \times L \times Y$)** and **Single-Year ($G \times L$)** experimental designs.
+
+### Key Features
+* **Dual Methodologies:** Choose between classic Expected Mean Squares (ANOVA) or modern Restricted Maximum Likelihood (REML).
+* **Dynamic Data Mapping:** Easily assign your dataset's columns to the required model parameters without renaming headers in Excel.
+* **Real-Time Filtering:** Toggle specific locations or years on and off to immediately see how environmental dropping affects variance and heritability.
+* **Interactive Visualizations:** Plotly-powered heatmaps for exploring $G \times E$ interaction effects with marginal main effects.
+
+---
+
+## 2. Getting Started
+
+### System Requirements
+To run this application locally, ensure you have R or RStudio installed along with the following packages:
+```R
+install.packages(c("shiny", "lme4", "dplyr", "tidyr", "DT", "bslib", "plotly"))
+```
+
+### Data Preparation (CSV Upload)
+If you are uploading your own data, ensure it is saved as a `.csv` file. The data should be in a **long format** (one observation per row) with the following minimum required columns:
+1.  **Trait:** The numeric phenotypic response (e.g., Yield, Height).
+2.  **Genotype:** The variety, line, or hybrid identifier.
+3.  **Location:** The testing site or environment.
+4.  **Replication:** The block or replication identifier.
+5.  **Year (Optional):** The season or year. If your trial was only conducted in a single year, you can omit this column.
+
+---
+
+## 3. Configuration Panel (Sidebar)
+
+The left sidebar is your control center for defining the model parameters.
+
+* **Data Source:** Toggle between the embedded "Wheat Yield" textbook data (Comstock & Robinson Table 8.1) or upload your own CSV.
+* **Column Mapping:** Use the dropdown menus to tell the app which column in your dataset corresponds to the Trait, Genotype, Location, Year, and Rep.
+* **Filtering:** * Check or uncheck specific **Locations** to see how subsetting the environments changes the stability metrics.
+    * Check or uncheck specific **Years**. 
+    * *Note:* If you select only **1 Year**, the app automatically drops the Year term from the statistical formula and runs a two-way $G \times L$ analysis to prevent model failure.
+* **Estimation Method:**
+    * **Mixed Model (REML):** The modern standard. Treats environmental and genotypic effects as random to calculate Best Linear Unbiased Predictors (BLUPs) and variance components. Highly robust against missing plots or unbalanced data.
+    * **Original ANOVA:** The classic 1952 algebraic approach. Calculates Expected Mean Squares to derive variance. Useful for recreating textbook examples or legacy literature.
+
+Once your settings are configured, click the blue **Run Analysis** button.
+
+---
+
+## 4. Understanding the Outputs (Main Tabs)
+
+### Tab 1: Analysis Summary
+This is your primary dashboard for interpreting the trial results.
+* **Model Type:** Confirms whether the engine successfully detected a Multi-Year ($G \times L \times Y$) or Single-Year ($G \times L$) design based on your filters.
+* **Heritability:** The estimated broad-sense heritability ($H^2$) on a mean basis, representing the proportion of phenotypic variance driven by genetics.
+* **Variance Components Table:** A breakdown of how much total variation is attributed to Genetics ($V_g$), Environments ($V_l$, $V_y$), and their specific interactions ($V_{gl}$, $V_{gy}$, $V_{gly}$), alongside the unexplainable Error ($V_e$) and total Phenotypic Variance ($V_p$).
+
+### Tab 2: Effect Heatmaps
+An interactive visual exploration of your BLUPs or fixed effect estimates.
+* **Select Effect to Visualize:** Choose a specific interaction (e.g., $G \times L$).
+* **Show Main Effects in Margins:** When checked, this appends the isolated 1D main effects (e.g., Overall Genotype Effect) to the outer edges of the 2D interaction heatmap. 
+* **Interpretation:** * **Red (Positive):** This variety performed *above* the grand mean in this specific environment.
+    * **Blue (Negative):** This variety performed *below* the grand mean in this specific environment.
+    * *Interactivity:* Hover over any block to see the precise numeric effect estimate. You can also click and drag to zoom into specific clusters of genotypes.
+
+### Tab 3: Raw Effect Tables
+A searchable, sortable data table containing the exact numeric estimates (BLUPs for REML, deviations for ANOVA) for every main effect and interaction term. You can copy or export this data for secondary downstream analysis.
+
+### Tab 4: ANOVA Table
+*Note: This tab is only populated if the "Original ANOVA" method is selected.* Displays the raw degrees of freedom, sum of squares, and mean squares for the linear model.
+
+### Tab 5: Raw Data Preview
+A sanity-check tab displaying your uploaded or filtered dataset to ensure columns were read correctly and data types are accurate.
+
+---
+
+## 5. Troubleshooting & Tips
+
+* **"Model failed to converge" or Singular Fit warnings (REML):** This usually happens if your dataset is extremely small, if a variance component is essentially zero, or if you only have one location/year but accidentally forced the model to look for those interactions. Ensure your filtering reflects your actual experimental design.
+* **Negative Variance Components (ANOVA):** In the Original ANOVA method, subtracting Mean Squares can sometimes result in negative variance estimates mathematically. This usually means the true biological variance is zero. If you see negative variances, switch to the **Mixed Model (REML)**, which bounds estimates at zero.
+* **Missing Data:** If your CSV contains missing plots (`NA`), the Original ANOVA method will drop those entire rows, severely skewing the balance. The Mixed Model (REML) handles missing data smoothly and is highly recommended for real-world field data.
