@@ -1,0 +1,104 @@
+---
+title: "Optimized P-Rep Design"
+output: html_document
+date: "2026-05-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here is the comprehensive user manual and technical documentation for the **Optimal p-rep Design Engine**, detailing both the theoretical methodology and the software implementation.
+
+---
+
+# Optimal p-rep Design Engine: User Manual & Technical Reference
+
+## 1. Introduction
+The **Optimal p-rep Design Engine** is a specialized analytical tool designed for agricultural biometricians and quantitative geneticists. It generates partially replicated (p-rep) field trial layouts by optimizing the allocation of replicated test lines based on their genetic relatedness. 
+
+By utilizing the **Cullis Approach** (A-optimality), the engine ensures that the chosen subset of replicated lines minimizes the Average Prediction Error Variance (PEV) across the *entire* testing population, maximizing expected genetic gain and structural heritability in early-stage breeding trials.
+
+---
+
+## 2. Theoretical Methodology
+
+### 2.1 The Information Matrix & PEV
+In a mixed-model framework, the reliability of genetic predictions is governed by the inverse of the Information Matrix ($M$). For a design with a genomic or pedigree relationship matrix ($A$), the initial information matrix before spatial effects is approximated as:
+
+$$M = \left( I + \lambda A^{-1} \right)^{-1}$$
+
+Where:
+* $I$ is the identity matrix representing the base replication of 1 plot per test line.
+* $A^{-1}$ is the inverse of the kinship/pedigree matrix.
+* $\lambda$ is the variance ratio ($\sigma^2_e / \sigma^2_g$).
+
+The diagonal elements of $M$ represent the **Prediction Error Variance (PEV)** for each genotype.
+
+### 2.2 The Cullis A-Optimality Criterion
+The objective of the algorithm is to select $k$ additional plots (replications) such that the **trace** (sum of the diagonal elements) of the new information matrix is minimized. 
+
+Minimizing the trace minimizes the Average PEV ($\bar{v}_{PEV}$), which directly maximizes the **Cullis Heritability** ($H^2_C$):
+
+$$H^2_C = 1 - \frac{\bar{v}_{PEV}}{2\sigma^2_g}$$
+
+### 2.3 The Sherman-Morrison Update (Computational Efficiency)
+Recalculating the inverse of a massive matrix for every potential line addition is computationally prohibitive. Instead, the engine uses a **Greedy Search** combined with the **Sherman-Morrison formula** for rank-1 matrix updates. 
+
+When a genotype $k$ is selected for an extra replication, the new information matrix ($M_{new}$) is updated instantly:
+
+$$M_{new} = M - \frac{M \mathbf{e}_k \mathbf{e}_k^T M}{1 + \mathbf{e}_k^T M \mathbf{e}_k}$$
+
+The algorithm scores all candidate lines based on how much they will reduce the trace using this exact formula, picks the best one, updates $M$, and repeats until the field capacity is reached.
+
+---
+
+## 3. Algorithmic Implementation Details
+
+The core R wrapper (`generate_cullis_prep`) executes in four distinct phases:
+
+1.  **Validation & Capacity Check:** The engine checks if the physical grid (Rows × Cols) can accommodate the base population plus the requested Check lines, and ensures the total plots are perfectly divisible by the requested major Replications.
+2.  **Greedy Optimization:** The Sherman-Morrison loop runs, appending copies of test lines while strictly obeying the `max_reps` parameter. Once a line hits its maximum allowed plots, it is removed from the candidate pool.
+3.  **The "Sequential Dealing" Algorithm:** To prevent clustered randomization (which causes spatial blank spaces or over-representation in a single block), the algorithm pools all necessary seeds (Checks + Replicated Lines + Base Lines). It extracts the unique identities, randomly shuffles them, and then "deals" their available copies sequentially into the major Replications (e.g., Rep 1, Rep 2, Rep 1, Rep 2). This mathematically guarantees a perfectly equitable split of checks and duplicates across the field.
+4.  **Kinship Dimensionality Reduction:** The $A$ matrix undergoes Principal Component Analysis (PCA). The First Principal Component (PC1) is extracted as a 1D "Similarity Spectrum" score, which is merged into the final layout to power the visual heatmap.
+
+---
+
+## 4. User Guide: Operating the Shiny Application
+
+### Step 1: Data Input
+* **Upload A Matrix:** Upload a `.csv` file. The file must be a square, symmetric matrix with genotype IDs as both row names and column names. (The first column should contain the row names).
+* **Load Wheat Demo Data:** Click this button to instantly load a pre-configured $599 \times 599$ wheat pedigree matrix.
+
+### Step 2: Grid & Replication Split
+* **Field Rows & Columns:** Define the physical dimensions of your field (e.g., 36 rows × 20 columns = 720 total plots).
+* **Environments:** Number of independent locations to generate layouts for.
+* **Replications (Splits):** Define how many major physical divisions the field should have. **Critical Rule:** The total plots (Rows × Cols) must be evenly divisible by this number. For a 720-plot field, a split of 2 creates two 360-plot super-blocks.
+
+### Step 3: Optimization Constraints
+* **Max Plots per Test Line:** Limits how many times a highly-related test line can be replicated. Setting this to `2` ensures a standard p-rep design where replicated lines only appear twice.
+* **Check Lines:** A comma-separated list of standard checks (e.g., `Check_A, Check_B`). These lines are assumed to have no relationship data in the A matrix (Unknown Kinship).
+* **Plots per Check (Total):** The total number of plots dedicated to *each* check across the whole field. 
+
+### Step 4: Execution & Review
+Click **Generate Optimal Design**. Upon completion, navigate the main panel tabs:
+
+1.  **Matrix of Success (KPIs):** Review the structural efficiency of the design. Look for a minimized Trace/Average PEV and an Expected Cullis $H^2$ approaching 1.0.
+2.  **Field Heatmap:** A visual representation of the physical grid.
+    * **Colors:** Represent the PCA Similarity Spectrum. Lines with similar colors are highly related based on the A matrix.
+    * **White Tiles:** Represent your Check lines (NA similarity).
+    * **Red Lines:** Horizontal boundaries showing exactly how the algorithm physically partitioned your major Replications.
+3.  **Design Layout (Data):** The raw, plot-by-plot grid assignment ready for planting software.
+4.  **Replication Summary:** A sorted table showing exactly how many plots were allocated to Checks, Replicated Test Lines, and Unreplicated Test Lines.
+
+### Step 5: Export
+Click **Download Design CSV** to export the final layout, which includes Environment, Plot, Row, Col, Replication ID, Genotype, and Similarity scores.
+
+---
+
+## 5. Software Dependencies
+To run this application locally, the following R packages are required:
+* `shiny`: Framework for the interactive web application.
+* `DT`: For rendering interactive, scrollable data tables.
+* `ggplot2`: For rendering the contiguous, mathematically scaled spatial heatmaps.
+* `stats` (Base R): Utilized for matrix inversion (`solve()`) and Principal Component Analysis (`prcomp()`). *Note: No external commercial solver packages (like ASReml) are required to generate the design.*

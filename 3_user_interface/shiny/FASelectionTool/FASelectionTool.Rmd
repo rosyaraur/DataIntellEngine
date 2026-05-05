@@ -1,0 +1,92 @@
+---
+title: "Factor Analytic Selection Tool"
+output: html_document
+date: "2026-05-03"
+---
+
+# FAST Dashboard: Factor Analytic Selection Tools Manual
+
+## 1. Introduction
+The FAST Dashboard implements the Factor Analytic framework popularized by **Smith and Cullis (2018)**. Designed for agricultural scientists and quantitative geneticists, it allows breeders to decompose complex Genotype-by-Environment (G×E) interactions into latent factors, providing a more nuanced and powerful selection strategy than simple environmental averaging.
+
+## 2. Statistical Foundations & Methodology
+The application utilizes a highly robust, two-stage methodology bridging mixed-model theory with multivariate dimension reduction.
+
+### Stage 1: The Mixed-Model Engine (EBLUPs)
+The dashboard uses the `lme4` package to calculate Empirical Best Linear Unbiased Predictors (EBLUPs). It automatically detects if your trial has replications:
+* **Replicated Data:** Fits `(1|Genotype) + (1|Genotype:Env)` to partition genetic and interaction variances.
+* **Unreplicated Data:** Fits `(1|Genotype)` and extracts the interaction from the residuals.
+
+By extracting the random effects, the model centers the data, leaving a clean matrix of $G + G \times E$ deviations. This applies "shrinkage," pulling highly variable or poorly replicated data points conservatively toward the population mean.
+
+### Stage 2: Singular Value Decomposition (SVD)
+The application then performs an SVD on the centered EBLUP matrix. For a genotype $i$ in environment $j$, the genetic effect $g_{ij}$ is decomposed as:
+$$g_{ij} = \sum_{r=1}^{k} (\lambda_{jr} f_{ir}) + \delta_{ij}$$
+
+Where:
+* $k$: The order of the model (number of latent factors).
+* $\lambda_{jr}$: The **Loading** of environment $j$ on factor $r$.
+* $f_{ir}$: The **Score** of genotype $i$ on factor $r$.
+* $\delta_{ij}$: The **Specific Interaction** (residual genetic variance not captured by the factors).
+
+### Selection Metrics
+1.  **Overall Performance (OP):** Defined as the genotype score on the first latent factor ($f_{i1}$). It represents the general adaptation of a line across the trial network.
+2.  **Stability:** Calculated as the inverse of the specific variance ($1 / \sum \delta_{ij}^2$). A higher stability index indicates a genotype whose performance is highly predictable based on the latent factors alone.
+
+---
+
+## 3. Anatomy of the Dashboard Elements
+
+The dashboard is divided into two primary sections: the **Control Sidebar** (left) for input and parameter tuning, and the **Main Workspace** (right) for interactive visualizations.
+
+### A. The Control Sidebar (Inputs & Settings)
+* **Data Source Toggle:** Switches the app between **Demo Mode** (using internal simulated data) and **Upload User Data** (processing your custom `.csv`).
+* **Column Mapping Inputs:** When uploading data, these text boxes allow you to tell the model exactly what your columns are named (e.g., mapping your "Line_ID" column to the model's "Genotype" requirement).
+* **Latent Factors (k):** A numeric spinner determining how many dimensions of G×E to extract. Default is $k=2$.
+* **Highlighting Tool:** A text box accepting comma-separated Genotype IDs. Any genotype entered here will be rendered as a prominent orange marker in the scatter plots, overriding the default gray.
+* **Top N Labeler:** Controls how many of the highest-performing genotypes automatically receive text labels on the plots to prevent visual clutter.
+* **Run Analysis Button:** Triggers the SVD calculation and updates all plots. *Note: You must click this after changing 'k' or uploading new data.*
+* **Advanced Export Module:** Contains a dropdown menu to select the specific data matrix you wish to export (including the centered EBLUPs), paired with a green **Download** button to generate the `.csv` file.
+
+### B. The Main Workspace (Outputs & Visualizations)
+The main panel utilizes a tabbed interface. All plots in this area are fully interactive: you can hover over points to see exact values, draw boxes to zoom in, and double-click to reset the view.
+
+| Tab | Purpose | Key Insight |
+| :--- | :--- | :--- |
+| **Selection** | Identifies top-tier candidates. | Look for genotypes in the **top-right quadrant** (High OP + High Stability). Highlighted checks help benchmark performance. |
+| **GxE Biplot** | Visualizes adaptation patterns. | Genotypes near an environment vector are specifically adapted to that location. The angle between vectors shows environmental correlation. |
+| **EBLUP Heatmap**| Views the pre-SVD genetic signal. | Red/Blue tiles show positive/negative $G + G \times E$ deviations. Useful for spotting raw performance trends before dimensionality reduction. |
+| **Env Loadings** | Correlates sites with factors. | Red tiles indicate an environment is heavily driving that specific latent factor. |
+| **Env Correlations** | Measures site redundancy. | Dark red clusters ($r > 0.8$) suggest environments that provide redundant selection information and could be consolidated. |
+| **Scree Plot** | Model diagnostics. | The "elbow" in the cumulative red line indicates the point of diminishing returns for adding more latent factors ($k$). |
+| **Data Preview** | Upload verification. | Displays the raw data so you can confirm column names match your sidebar inputs before running the model. |
+
+---
+
+## 4. Operational Guide & Workflow
+
+1.  **Load Data:** Select "Upload User Data", browse for your `.csv`, and immediately check the **Data Preview** tab to confirm it loaded correctly.
+2.  **Map Columns:** Ensure the text boxes in the sidebar perfectly match the column headers in your previewed data.
+3.  **Run Initial Model:** Leave $k=2$ and click **Run Analysis**.
+4.  **Check Diagnostics:** Navigate to the **Scree Plot**. If Factor 1 and Factor 2 explain >80% of the cumulative variance, $k=2$ is appropriate. If Factor 3 explains a large portion, increase $k$ in the sidebar and re-run.
+5.  **Evaluate Stability:** Use the **Selection Plot** to find lines that beat your current standards (which you can track using the Highlight tool).
+6.  **Export:** Once satisfied, use the Export dropdown to download your "FAST Rankings", "EBLUPs", or "Environment Loadings" for use in reports or downstream genomic prediction models.
+
+---
+
+## 5. Practical Details & Watch-Outs
+
+While the FAST methodology is powerful, it is important to understand its computational behavior and biological assumptions. Keep the following watch-outs in mind when analyzing trial data:
+
+### Mixed-Model & EBLUP Considerations
+* **Missing Data Handling:** Unlike raw arithmetic means which fail in SVD when data is missing, this tool natively handles missing cells. Because EBLUPs are centered at zero, unobserved $G \times E$ interactions are safely imputed as $0$ (the expected population mean), allowing the SVD to run smoothly on unbalanced networks.
+* **Extreme Unbalance:** If a trial is severely unbalanced (e.g., a genotype appears in only one environment with no replication), the `lme4` shrinkage might be overly aggressive. The estimate may be pulled so close to zero that a true, extreme biological signal is masked.
+* **Computational Bottleneck:** `lme4` is highly efficient, but if you scale this tool to massive early-stage yield trials (e.g., tens of thousands of lines across dozens of environments), the initial EBLUP calculation step may experience slight delays.
+
+### SVD & Dimensionality Considerations
+* **Non-Linear Responses:** SVD mathematically assumes linear relationships. If your $G \times E$ is driven by a massive non-linear threshold (e.g., a sudden killing frost that wipes out half the trial but leaves the other half untouched), SVD may struggle to isolate this into a single clean factor, instead smearing the variance across multiple dimensions.
+* **The $k$ Limit:** You cannot extract more factors ($k$) than the minimum of your genotypes or environments. If you only test in 3 locations, your model is mathematically capped at $k=3$.
+
+### Selection Metric Interpretation
+* **Redefining "Stability":** In the FAST framework, a highly "stable" genotype is *not* one that yields the exact same amount everywhere (static stability). A stable genotype is one whose performance perfectly tracks the dominant latent factors of your network, meaning its behavior is highly predictable (dynamic stability).
+* **The Danger of Factor 1 Over-Reliance:** If you check the Scree Plot and Factor 1 explains a low amount of variance (e.g., < 40%), **do not select strictly on OP**. Low variance on Factor 1 indicates massive crossover $G \times E$ (distinct mega-environments). Selecting solely on OP in this scenario means you are choosing a "jack-of-all-trades" that will likely be out-yielded by specifically adapted lines in individual sub-regions.

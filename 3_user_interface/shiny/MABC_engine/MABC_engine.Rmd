@@ -1,0 +1,90 @@
+---
+title: "MABC engine"
+output: html_document
+date: "2026-05-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# MABC Production Suite: Comprehensive User & Technical Manual
+
+This manual details the methodology, operational workflow, and troubleshooting protocols for the Marker-Assisted Backcrossing (MABC) Production Suite. This tool bridges the gap between raw genomic data and actionable breeding decisions by quantifying background recovery, minimizing linkage drag, and gracefully handling real-world data noise.
+
+---
+
+## 1. System Overview & Core Methodology
+
+The MABC engine partitions the genome of backcross progeny into three distinct components to calculate an optimized Selection Index. 
+
+### A. Foreground Selection (Trait Introgression)
+The system employs a **Dual-Strategy Carrier Check** to ensure target traits are successfully introgressed.
+* **Single-SNP Traits:** Strict requirement for the heterozygous state (dosage = 1).
+* **Haplotype Blocks:** Probabilistic matching. The engine calculates a "Confidence Score" for the block. If the proportion of successfully matched markers exceeds $(1 - \epsilon)$, where $\epsilon$ is your expected lab error rate, the individual is classified as a carrier. This prevents elite lines from being discarded due to a single miscalled SNP within a redundant haplotype.
+
+### B. Background Recovery (RPG%)
+The engine calculates the Recurrent Parent Genome (RPG) percentage using a **Windowed Exclusion** strategy. 
+* **The Buffer:** Markers within a user-defined radius (e.g., 10 cM) of the target trait are excluded from the background calculation. This ensures that unavoidable linkage drag in early backcross generations does not unfairly penalize the overall recovery score.
+* **Dynamic Denominators:** To handle missing data ($NAs$), the denominator for RPG% is calculated individually for each sample based *only* on the markers successfully observed for that specific line.
+
+### C. Linkage Drag Estimation
+Drag is measured in centiMorgans (cM) by executing a "haplotype walk" outward from the target locus boundaries until the first Recurrent Parent homozygote is detected on both the left and right flanks. 
+
+---
+
+## 2. Data Input Specifications
+
+For the application to function correctly, your input files must strictly adhere to these formats:
+
+### Genotype Matrix (CSV)
+* **Format:** Markers in Columns, Individuals in Rows.
+* **Row Names (Column 1):** Unique Individual/Sample IDs.
+* **Header (Row 1):** Unique Marker IDs.
+* **Encoding:** Numeric dosage: `0` (Recurrent Parent Homozygote), `1` (Heterozygote / Carrier), `2` (Donor Homozygote).
+
+### Genetic Map (CSV)
+* **Columns Required:** `Marker_ID` (must exactly match matrix headers), `Chr` (Chromosome number/string), `Pos_cM` (Genetic position in centiMorgans).
+
+---
+
+## 3. Step-by-Step Operational Workflow
+
+### Tab 1: Setup & Analysis
+1. **Upload Data:** Load your Genotype Matrix and Genetic Map.
+2. **Define Traits:** Use the text box to define your targets. Format strictly as `TraitName: Marker1, Marker2`. Use one marker for single-SNP tracking or a comma-separated list for haplotypes.
+3. **Set Noise Parameters:** * **Lab Error Rate ($\epsilon$):** Set this to your genotyping platform's known error rate (e.g., 0.02 for 2%). 
+   * **Buffer (cM):** Set the exclusion zone around the trait. 5-10 cM is standard.
+4. **Execute:** Click "Run MABC Engine" to generate raw statistics for the entire population.
+
+### Tab 2: Selection & Ranking
+1. **Filter by Quality:** Set the **Min Call Rate Threshold**. Individuals with data sparsity below this threshold are disqualified.
+2. **Tune Selection Weights:**
+   * **Weight: RPG Recovery (+):** Increase this to prioritize lines that have returned to the commercial background quickly.
+   * **Weight: Linkage Drag (-):** Increase this if the donor parent has poor agronomics and you need to aggressively select for narrow introgressions.
+3. **Execute:** Click "Rank Candidates" to generate the final Selection Index.
+
+### Tab 3 & 4: Visualization and Export
+* **Idiogram Generator:** Select a top candidate to view their chromosomal recovery map. Look for tight orange bands (traits) surrounded immediately by blue (RP background).
+* **Export:** Download both the raw population statistics and the filtered, ranked elite list for your crossing block design.
+
+---
+
+## 4. Things to Watch Out For (Critical Considerations)
+
+* **The "Hitchhiker" Illusion:** Linkage drag is calculated based on available markers. If marker density on a target chromosome is low (e.g., gaps of 20 cM), your drag estimate is highly uncertain. The system assumes drag extends to the nearest observed recombination point.
+* **Extreme Missingness Bias:** If missing data is not randomly distributed (e.g., an entire chromosome failed to amplify), the dynamic denominator protects the math, but the biological reality of that line's recovery is unknown. Always cross-reference high-ranking lines with their `Call_Rate`.
+* **Index Relativity:** The `Selection_Index` is a relative Z-score metric. An index of `2.5` is only meaningful relative to the other individuals in that specific run. You cannot directly compare a score of `2.5` from Population A to a score of `2.5` from Population B.
+
+---
+
+## 5. Potential Bugs & Troubleshooting
+
+| Symptom / Error Message | Potential Cause | Solution |
+| :--- | :--- | :--- |
+| **"No individuals met the carrier and call rate criteria."** | Noise is too high, or thresholds are too strict. | Lower the `Min Call Rate Threshold` in Tab 2. Alternatively, ensure your `Lab Error Rate` ($\epsilon$) in Tab 1 accurately reflects your data; if $\epsilon$ is set to 0.00, a single miscalled SNP will disqualify true carriers. |
+| **App crashes immediately upon clicking "Run Analysis"** | Mismatch between Matrix columns and Map rows. | Ensure `Marker_ID` strings in the genetic map perfectly match the column headers in the genotype matrix (watch out for trailing spaces or R replacing hyphens with dots). |
+| **"Total_Drag_cM" shows `Inf` or `-Inf`** | Target marker is not on the genetic map provided. | Verify that all markers listed in the "Trait Definition" box actually exist in your uploaded genetic map CSV. |
+| **App disconnects or freezes (Grey screen)** | Out of memory (RAM). The matrix is too large for the Shiny server allocation. | Downsample background markers using LD pruning before uploading to the MABC suite, or run the app locally on a machine with higher RAM. |
+| **Idiogram fails to render / Blank Plot** | Selected individual has 100% missing data on the target chromosome. | Check the `Call_Rate`. If a line has massive missing data blocks, ggplot cannot draw the segments. |
+

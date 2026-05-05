@@ -1,0 +1,140 @@
+---
+title: "MABC_pyramiding_popsize_calculator"
+output: html_document
+date: "2026-05-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Marker-Assisted Backcrossing (MABC) & Pyramiding Suite: Technical Instruction Manual
+
+This manual provides the technological framework, operational instructions, and practical examples for deploying the MABC Production Suite. This toolset is designed to optimize commercial breeding pipelines by bridging prospective experimental design (population sizing) with retrospective genomic selection (candidate ranking).
+
+---
+
+## 1. System Architecture & Technological Overview
+
+The suite is divided into two primary computational modules, both written in R and deployable as either standalone functions or interactive Shiny dashboards.
+
+### A. The Tabular Population Sizing Calculator (Prospective Design)
+This module determines the exact Effective Population Size ($N_e$) required to guarantee the successful introgression of target traits while simultaneously recovering an elite genetic background.
+
+**Technological Details:**
+* **Haldane's Mapping Function:** Converts physical/genetic distance in centiMorgans (cM) to a recombination fraction ($r$). Formula: $r = 0.5 \cdot (1 - e^{-2 \cdot (d/100)})$.
+* **Linkage Phase Mathematics:**
+    * **Coupling Phase:** Traits are on the same chromosome from the same donor. The engine calculates the probability of zero crossovers occurring between them: $P = 0.5 \cdot (1 - r)$.
+    * **Repulsion Phase:** Traits are from different donors and must be stacked. The engine calculates the probability of an exact crossover occurring between them: $P = 0.5 \cdot r$.
+* **Background Multiplier:** Uses a logarithmic confidence interval. Formula: $Base\_N = \ln(1 - Confidence) / \ln(1 - P_{total})$. This is then divided by the top percentile target for background recovery.
+
+### B. The MABC Analytical Engine (Retrospective Selection)
+This module analyzes actual genotypic data ($BC_n$ progeny) to rank candidates based on target introgression, genome recovery, and linkage drag.
+
+**Technological Details:**
+* **Haplotype-Aware Selection:** Utilizes an error-tolerant ($\epsilon$) confidence score for multi-marker traits. If a haplotype block matches the donor above the threshold $(1 - \epsilon)$, it survives the carrier filter.
+* **Windowed Exclusion:** Excludes markers within a defined `buffer_cM` around the target trait when calculating Recurrent Parent Genome ($RPG\%$).
+* **Dynamic Denominators:** Calculates percentages based only on successfully called markers per individual, mitigating bias from missing data (NAs).
+* **Standardized Selection Index:** Ranks individuals using Z-score normalization for both RPG recovery (+) and Linkage Drag (-).
+
+---
+
+## 2. Instructions: Tabular Population Sizing
+
+This module uses a "Wide Format" data structure, representing up to two loci per chromosome.
+
+### Data Input Specifications
+Your input data frame must contain exactly 8 columns:
+1.  **Chromosome:** Identifier for the linkage group.
+2.  **Locus1:** Name of the first trait/marker.
+3.  **Position1:** Genetic position in cM.
+4.  **State1:** Either `Homozygous` (fixed, no selection pressure) or `Segregating`.
+5.  **Locus2:** Name of the second trait/marker.
+6.  **Position2:** Genetic position in cM.
+7.  **State2:** Either `Homozygous` or `Segregating`.
+8.  **Phase:** `Coupling`, `Repulsion`, or `NA` (if only one or zero loci are segregating).
+
+### Example Execution
+
+**Scenario:** You need to stack two traits on Chromosome 2 in repulsion (14 cM apart) while tracking an independent trait on Chromosome 3. You want 95% confidence and to select from the top 5% of the background.
+
+```r
+# 1. Define the input data
+introgression_plan <- data.frame(
+  Chromosome = c("2", "3"),
+  Locus1 = c("DiseaseRes1", "YieldQTL"),
+  Position1 = c(18, 87),
+  State1 = c("Segregating", "Segregating"),
+  Locus2 = c("QualityTrait", ""),
+  Position2 = c(32, 0),
+  State2 = c("Segregating", "Homozygous"),
+  Phase = c("Repulsion", "NA"),
+  stringsAsFactors = FALSE
+)
+
+# 2. Execute the function
+results <- calculate_wide_pop_size(
+  df = introgression_plan, 
+  target_conf = 0.95, 
+  bg_top_pct = 0.05
+)
+
+print(results)
+```
+
+**Interpretation:** The output will indicate a high population requirement due to the repulsion phase block. If `Final_Pop_Size` exceeds your nursery capacity (e.g., > 10,000), you must break the introgression into two generations.
+
+---
+
+## 3. Instructions: MABC Analytical Engine
+
+Once your population is grown and genotyped, use this engine to find the optimal plants to advance to the next generation.
+
+### Data Input Specifications
+1.  **Genotype Matrix:** Numeric matrix. Rows = Individuals, Columns = Markers. Data encoded as `0` (Recurrent), `1` (Heterozygous Carrier), `2` (Donor), and `NA` (Missing).
+2.  **Genetic Map:** Data frame with columns `Marker_ID`, `Chr`, and `Pos_cM`.
+3.  **Trait List:** A named list of marker vectors defining the foreground targets.
+
+### Example Execution
+
+**Scenario:** Evaluating a $BC_2$ population for two target traits, allowing a 2% lab error rate and a 10 cM exclusion buffer.
+
+```r
+# 1. Define Traits
+target_traits <- list(
+  Trait_A = c("M_50"),                     # Single SNP
+  Trait_B = c("M_245", "M_246", "M_247")   # Haplotype Block
+)
+
+# 2. Run the Analysis Engine
+raw_stats <- mabc_analysis_engine(
+  pop_mat = my_genotypes, 
+  map_df = my_genetic_map, 
+  trait_list = target_traits, 
+  epsilon = 0.02, 
+  buffer_cM = 10
+)
+
+# 3. Apply Selection Index & Rank
+elite_candidates <- rank_mabc_progenies(
+  mabc_results = raw_stats, 
+  weight_rpg = 1,       # Standard priority for background
+  weight_drag = 2,      # High priority to minimize linkage drag
+  min_call_rate = 0.85  # Disqualify plants with >15% missing data
+)
+
+head(elite_candidates)
+```
+
+**Interpretation:** The top row of `elite_candidates` is your mathematically optimal plant. It possesses all target traits, high data quality, and the best balanced score of background recovery and minimal drag.
+
+---
+
+## 4. Troubleshooting & Best Practices
+
+| Issue | Cause | Resolution |
+| :--- | :--- | :--- |
+| **"Probability is functionally zero"** | Attempting to stack 3+ loci in tight repulsion simultaneously. | Redesign the crossing block. Execute marker-assisted pyramiding over 2-3 generations rather than a single massive cross. |
+| **Zero elite candidates found in ranking** | Genotyping error ($\epsilon$) is higher than allowed, or data sparsity failed the call rate. | Verify actual lab error rates. If tracking single SNPs, an error rate of >0% will occasionally fail true carriers. Increase $\epsilon$ in the engine parameters if necessary. |
+| **Drag calculated as `Inf`** | Target marker names in the trait list do not perfectly match the Genetic Map IDs. | Ensure string matching is exact (check for trailing spaces or R's default behavior of converting hyphens to periods). |
+| **Unrealistic RPG% (e.g., >99% in BC1)** | Missing data bias. Entire chromosomes failed to amplify, artificially inflating the ratio of observed RP alleles. | Always filter your genotype matrix by `Call_Rate` before trusting the RPG percentage. Do not select lines with < 80% coverage. |

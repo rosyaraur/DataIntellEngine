@@ -1,0 +1,80 @@
+---
+title: "spatial unreplicated field adjustment tool"
+output: html_document
+date: "2026-05-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Comprehensive User Manual: Field Trial Spatial Adjustment Application
+
+Welcome to the **Field Trial Spatial Adjustment** application. This tool is designed for plant breeders and agricultural researchers to clean un-replicated or partially replicated field trial data. 
+
+By mapping the underlying environmental gradients of your field (such as soil fertility peaks, drainage dips, or tractor compaction), this app strips away "spatial noise" to reveal the true genetic potential of your experimental families.
+
+---
+
+## 1. Data Input & Setup
+The sidebar on the left controls how data is fed into the application. You have three options:
+
+### Option A: Use Simulated Data
+If you do not have your own data yet, the app can generate a highly realistic, 28,000-plot field trial with simulated fertility gradients.
+* **Checks every 30 rows:** Simulates a field where standard "check" varieties are planted sparsely.
+* **Checks every 15 rows:** Simulates a denser grid of check varieties, providing higher resolution for mapping the field's fertility.
+
+### Option B: Upload Your Own CSV
+To analyze your own trial, upload a standard `.csv` file. 
+**Required Columns (Case-Sensitive):**
+* `Row`: The numeric row coordinate of the plot.
+* `Col`: The numeric column (or range) coordinate of the plot.
+* `yield`: The raw harvested yield (or any other continuous numeric trait).
+* `is_check`: A boolean (`TRUE` or `FALSE`) indicating if the plot contains a check variety. 
+* `family_id`: The genetic identifier for the plot. (Check plots can have any ID, the app will group them automatically).
+
+---
+
+## 2. Choosing a Spatial Model
+Once your data is loaded, you must select the mathematical engine used to map your field's environmental trends. 
+
+* **SpATS (2D Spline) — *Industry Standard*:** Fits a highly flexible, continuous 2D mesh over your field. It excels at finding organic, rolling patterns like soil gradients or water pooling. **Recommended for most modern breeding programs.**
+* **GAM (2D Smooth):** A Generalized Additive Model. Similar to SpATS, it fits a smooth continuous surface across the coordinates. It is a highly robust statistical alternative.
+* **LOESS Surface:** A localized regression model. It creates a smooth topographic map using only your check plots as anchor points. Good for fields with gradual, sweeping gradients.
+* **Row/Col Mixed Model:** Assumes that entire rows or columns share a single environmental effect. Best used when your field variation is mechanical (e.g., a clogged irrigation drip line affecting one whole row, or tractor tire compaction down specific columns).
+* **KNN Interpolation:** Calculates the expected environmental effect of an experimental plot by averaging the yield of its $K$-nearest check plots. You can adjust the number of neighbors ($K$) manually.
+
+*Once you select a model, click the blue **Run Analysis** button.*
+
+---
+
+## 3. Interpreting the Heatmaps
+The top panel displays three interactive heatmaps that visually explain the math applied to your field.
+
+1. **Raw Yield:** Your unadjusted field data. Darker colors represent lower yields, while brighter/yellow colors represent higher yields. This map usually looks messy due to the combination of genetic differences and soil variations.
+2. **Adjusted Yield:** Your clean data. The mathematical model has stripped away the field's environmental bias. This map represents the estimated *true genetic potential* of your plant families.
+3. **Modeled Spatial Trend:** The mathematical "map" of your field's environment. 
+    * **Red Areas:** Fertility dips. Plots located here suffered an unfair environmental penalty.
+    * **Blue Areas:** Fertility peaks. Plots located here received an unfair environmental boost.
+    * **White Areas:** Neutral zones with average fertility.
+
+---
+
+## 4. The Breeder Decision Table
+The bottom panel is the most critical tool for making advancement decisions. It aggregates your plot data by `family_id` and recalculates their overall rankings before and after the spatial adjustment.
+
+**Understanding "Rank Shift"**
+The most important column is the far-right **Rank Shift**. 
+* **Green Numbers (Positive Shift):** These families were penalized by being planted in a "red" fertility dip. Once the model corrected for this bad luck, their rank improved. *(These are your "diamonds in the rough" that you might have accidentally discarded based on raw yield alone).*
+* **Red Numbers (Negative Shift):** These families looked like top performers in the raw data, but the model revealed they were simply lucky to be planted in a "blue" fertility peak. Once corrected, their true ranking fell.
+* **Black Numbers (Zero/Minimal Shift):** These families performed exactly as expected, likely because they were planted in neutral areas of the field.
+
+---
+
+## 5. Exporting Your Results
+Once you are satisfied with the spatial adjustment, click the green **Download Adjusted Data** button in the sidebar. 
+
+This will generate a `.csv` file containing your original data alongside three new columns:
+* `fitted_trend`: The exact environmental penalty or boost applied to that specific plot.
+* `adjusted_yield`: The final, clean yield value to be used for your downstream genetic selections.
+* `residuals`: Any leftover variation not explained by the spatial model.

@@ -1,0 +1,90 @@
+---
+title: "Inbred Progeny Validation"
+output: html_document
+date: "2026-05-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Inbred Progeny Validation: QA/QC framework 
+
+## 1. Core Methodology: Genomic Partitioning
+The application moves beyond simple genetic distance by partitioning the marker panel into two biologically distinct diagnostic classes based on parental genotypes ($P_1$ and $P_2$).
+
+### A. Monomorphic Loci (Purity Check)
+These are markers where both parents are identical and homozygous (e.g., $P_1 = 0, P_2 = 0$).
+* **Biological Expectation:** In a true cross, the progeny must strictly match the parental state. 
+* **Threshold:** The system allows for a **Lab Error Tolerance** (e.g., 2%). If the Monomorphic Error Rate significantly exceeds this buffer, the line is flagged as an outcross.
+
+### B. Polymorphic Loci (Segregation Check)
+These are the segregating markers where parents differ (e.g., $P_1 = 0, P_2 = 2$).
+* **Inheritance:** We expect a balanced Mendelian draw from both parents.
+* **Expected $P_1$ Allele Proportion:** $$E[P_1] = \frac{1 - H_e}{2}$$
+    where **Expected Heterozygosity ($H_e$)** for a selfed generation $g$ is:
+    $$H_e = \left(\frac{1}{2}\right)^{g-1}$$
+* **Z-Score Normalization:** The system calculates a Z-score for every individual. Crucially, the standard deviation ($\sigma$) is **calculated dynamically** based on each individual's unique Call Rate.
+    $$Z = \frac{Observed - Expected}{\sigma_{individual}}$$
+
+---
+
+## 2. Input Data Specifications
+To ensure seamless mapping, your data should follow this matrix orientation:
+
+| Feature | Requirement |
+| :--- | :--- |
+| **Orientation** | **Markers in Rows**, Individuals in Columns. |
+| **Encoding** | Numeric Allele Dosage (**0**=Ref, **1**=Het, **2**=Alt). |
+| **Header** | Row 1 must contain Sample/Individual IDs. |
+| **Row Names** | Column 1 must contain unique Marker/SNP IDs. |
+| **Format** | CSV (Comma Separated Values). |
+
+---
+
+## 3. Step-by-Step Operational Workflow
+
+### Step 1: Data Loading & Mapping
+1.  Upload your CSV or click **"Load Demo Data"** to explore the tool's features.
+2.  The **Mapping UI** will appear. Select the columns representing **Parent 1**, **Parent 2**, and the batch of **Progenies** you wish to verify.
+
+### Step 2: LD Pruning (Marker Independence)
+Statistical validity requires independent markers. 
+1.  Set the **LD Threshold ($r^2$)**. A value of **0.8** is standard for removing redundant markers in tight linkage.
+2.  Click **"Prune Markers"**. The app will calculate the pairwise correlation matrix and keep only the most informative, independent SNPs.
+3.  **Export Panel:** Once pruned, you can download the **"Export Panel IDs"** CSV. This serves as your optimized purity panel for future laboratory assays.
+
+
+### Step 3: Pedigree Verification
+1.  Set the **Generation ($F_n$)** and your **Lab Error Tolerance** (usually 0.01 to 0.03).
+2.  Click **"Run Verification"**.
+3.  **Analyze Flags:**
+    * **VERIFIED (Green):** Matches the expected genetic profile.
+    * **REJECT: OUTCROSS (Red):** Significant monomorphic mismatch (foreign pollen).
+    * **REJECT: SKEWED (Yellow):** Inheritance is statistically biased (potential self-pollination).
+    * **REJECT: LOW DATA (Grey):** Call rate $< 50\%$; results are statistically unreliable.
+
+---
+
+## 4. Module: Power Stress Test (Simulation)
+This module acts as a "What-If" sandbox to test the limits of your marker panel under noisy conditions.
+
+### Noise Parameters:
+* **Genotyping Error:** Simulates lab miscalls by randomly flipping alleles.
+* **Missing Data:** Simulates low-quality DNA by randomly inserting `NA` values.
+
+### The Power Decay Curve:
+The plot visualizes the **Separation Power (Z-Score)** across different marker densities.
+* **Adequate (Green):** The Z-score is above your threshold (Default = 4.0), meaning the panel is dense enough to clearly distinguish an error from a true progeny even with noise.
+* **Risky (Red):** The variance is too high. You are likely to experience False Positives/Negatives.
+
+
+---
+
+## 5. Technical Considerations & Troubleshooting
+
+* **Effective vs. Total Markers:** After LD pruning, your "Total Markers" count will drop. This is a **feature**, not a bug. It ensures your Z-scores aren't artificially inflated by redundant linked markers.
+* **The "Double-Check" Rule:** If an individual is rejected with a **SKEWED** status but has a very low **Call Rate**, prioritize the call rate. High missingness naturally increases the chance of a "random walk" away from the mean.
+* **Parental Purity:** The model assumes parents are fixed and homozygous. If parents are heterozygous (e.g., $F_1$ or early-gen materials used as parents), the Mendelian expectations ($1:2:1$) will differ from the inbred expectations.
+

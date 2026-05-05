@@ -1,0 +1,87 @@
+---
+title: "Genetic distance and kinship explorer"
+output: html_document
+date: "2026-05-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# User Manual: Genetic Structure & Kinship Explorer
+
+Welcome to the Genetic Structure & Kinship Explorer. This interactive application is designed to help geneticists and breeders rapidly analyze high-density marker data. It calculates population-level evolutionary distances and individual-level genomic relationship matrices (GRM), visualizing the results dynamically.
+
+Here is a comprehensive guide on how to prepare your data, configure your analyses, and interpret the outputs.
+
+---
+
+## 1. Data Preparation & Input
+
+The application requires two separate CSV (Comma Separated Values) files to run a custom analysis. If no files are uploaded, the app will automatically generate internal demo data so you can explore the interface.
+
+### A. The Genotype Matrix
+This file contains your raw marker data. 
+* **Format:** Columns represent individual accessions, and rows represent genomic markers (SNPs).
+* **Metadata Columns:** The first three columns must be metadata (e.g., `id`, `chr`, `position`). 
+* **Encoding:** Genotypes must be encoded algebraically as **1** and **-1** (representing homozygous states). Missing data should be left blank or coded as `NA`.
+
+### B. The Descriptor Matrix
+This file contains the metadata assigning your individuals to specific groups or subpopulations.
+* **Format:** Each row represents one individual.
+* **Required Data:** It must contain at least one column for the **Sample ID** and one column for the **Subpopulation / Group**.
+
+### C. Column Mapping
+Once you upload your Descriptor Matrix, the app will attempt to auto-detect your ID and Population columns. 
+* **Verify Mapping:** A new section titled "Map Descriptor Columns" will appear in the sidebar. Use the dropdown menus to explicitly select which column holds your IDs and which holds your group labels.
+
+---
+
+## 2. Analysis Configuration
+
+The app operates in two distinct modes. Select your desired mode using the radio buttons under "Analysis Configuration."
+
+### Mode A: Population Genetic Distance
+This mode calculates the average allele frequencies for each subpopulation and measures the genetic divergence between them.
+
+* **Distance Metrics:**
+  * **Nei's Standard Distance:** The gold standard for evolutionary biology. It assumes differences arise from mutation and genetic drift. 
+  * **Euclidean Distance:** A straightforward geometric distance between allele frequencies.
+* **Plot Types:**
+  * **Dendrogram:** A hierarchical branching tree (using Ward's method) that shows the evolutionary lineage and clustering of your subpopulations.
+  * **PCoA Scatter:** A Principal Coordinate Analysis that flattens the multidimensional distance into a 2D spatial map. Distinct groups will separate visually.
+  * **Heatmap Matrix:** A grid displaying the exact numerical distances between every possible pair of subpopulations.
+
+### Mode B: Individual Relationship Matrix (GRM)
+This mode ignores subpopulations and calculates the exact genetic similarity (kinship) between every individual in your dataset.
+
+* **Kinship Methods:**
+  * **VanRaden (2008):** The standard algorithm used in Genomic Selection. It centers the data based on allele frequencies, meaning two individuals sharing a *rare* allele are scored as more closely related than two sharing a very common allele.
+  * **IBS (Identity by State):** A strict geometric calculation representing the exact mathematical proportion of alleles shared between two individuals.
+* **Plot Type:**
+  * **Kinship Heatmap:** Displays an $N \times N$ matrix. Red/dark areas indicate highly related lines (or inbred clones), while white/blue areas indicate completely unrelated lines.
+
+---
+
+## 3. Running the Analysis
+
+Because processing tens of thousands of markers is computationally intensive, the app does not automatically update when you change a setting. 
+
+1. Ensure your data source is active (check the text box at the bottom of the sidebar to see your marker and sample counts).
+2. Configure your metric and plot type.
+3. Click the blue **Run Analysis** button. 
+4. Allow a few seconds for matrix algebra and multidimensional scaling to complete. The plot will render in the main panel.
+
+---
+
+## 4. Troubleshooting & Common Errors
+
+* **Error: "Calculation failed. Please verify that your Sample IDs... match."**
+  * *Cause:* The app cannot link your genotypes to your subpopulations. 
+  * *Fix:* Ensure the IDs in your Descriptor Matrix exactly match the column headers in your Genotype Matrix. (Note: The app is programmed to automatically ignore `NSFTV_` prefixes if they exist in the headers but not the descriptor file).
+* **App Freezes or Grays Out:**
+  * *Cause:* Calculating a relationship matrix for thousands of individuals across 44,000 markers requires significant RAM. 
+  * *Fix:* Be patient while the background R process completes the `tcrossprod` matrix multiplication. 
+* **Error reading uploaded files:**
+  * *Cause:* The uploaded file is an Excel spreadsheet (`.xlsx`) or text file.
+  * *Fix:* Open your data in Excel, go to File > Save As, and select **CSV (Comma delimited) (*.csv)**. Re-upload the newly saved files.

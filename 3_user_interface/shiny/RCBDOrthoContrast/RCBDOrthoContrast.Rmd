@@ -1,0 +1,70 @@
+---
+title: "RCBD_orthogonal_contrasts_polynomial"
+output: html_document
+date: "2026-05-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# User Manual: RCBD & Orthogonal Contrast Analyzer
+
+Welcome to the RCBD & Orthogonal Contrast Analyzer! This application is designed to streamline the analysis of Randomized Complete Block Designs (RCBD). It provides an intuitive interface for conducting standard ANOVAs, executing custom orthogonal contrasts, generating post-hoc mean comparisons, and visualizing your results with publication-ready plots.
+
+## Table of Contents
+1. [Getting Started: Loading Data](#1-getting-started-loading-data)
+2. [Configuring Your Model](#2-configuring-your-model)
+3. [Defining Orthogonal Contrasts](#3-defining-orthogonal-contrasts)
+4. [Running the Analysis](#4-running-the-analysis)
+5. [Understanding the Output Tabs](#5-understanding-the-output-tabs)
+6. [Downloading Your Results](#6-downloading-your-results)
+
+---
+
+### 1. Getting Started: Loading Data
+On the left-hand sidebar, start by selecting your **Data Source**. You have three options:
+* **Example 1: Greenhouse (8 Levels):** A built-in categorical dataset testing 8 different fungicide treatments. 
+* **Example 2: Soybeans (Polynomial, 5 Levels):** A built-in quantitative dataset testing 5 different row spacings.
+* **Upload Custom CSV:** Select this option to analyze your own data. A file upload button will appear. Ensure your data is in a standard `.csv` format with columns for your blocks, treatments, and response variables.
+
+### 2. Configuring Your Model
+Once your data is loaded, move down the sidebar to set up your statistical model.
+* **Model Variables:** The app will automatically scan your dataset and populate the dropdown menus. Select your **Response**, **Block**, and **Treatment** columns.
+* **Means Comparison:** Choose a post-hoc test to compare treatment means (**LSD**, **Tukey**, or **Duncan**). If you are only interested in contrasts or trends, you can set this to **none**.
+* **Alpha Level:** Set your significance threshold (default is 0.05).
+* **Polynomial Trend Plot:** *Note: This option only appears if your Treatment variable is purely numerical (quantitative).* If visible, you can select the degree of polynomial regression (1 = Linear, 2 = Quadratic, etc.) you want to fit to your data.
+
+### 3. Defining Orthogonal Contrasts
+The app features an interactive spreadsheet to define your custom comparisons. 
+
+1. Navigate to **Tab 1: Contrast Editor** in the main window.
+2. The columns of the table will automatically match the unique levels of your selected Treatment variable.
+3. Type the name of your contrast in the **Contrast_Name** column (e.g., "Control vs Treatment").
+4. Enter the coefficients for each treatment level across the row. Remember, for a contrast to be valid, the sum of the coefficients in a single row must equal zero.
+5. **To add or delete a contrast:** Right-click anywhere on the table to open the context menu and select "Insert row below" or "Remove row."
+
+*Tip: If you select one of the built-in examples, the table will pre-populate with textbook-standard orthogonal contrasts so you can see how it works!*
+
+### 4. Running the Analysis
+Once your data is loaded, your variables are selected, and your contrasts are typed into the editor, click the large green **Run Analysis** button at the bottom of the sidebar. 
+
+**Important:** You must click this button every time you change a setting, upload new data, or edit a contrast to update the results.
+
+### 5. Understanding the Output Tabs
+After running the analysis, explore your results across the designated tabs:
+
+* **Tab 1: Contrast Editor:** Your input table for defining comparisons.
+* **Tab 2: ANOVA & Results:** Displays the raw statistical output.
+    * *Analysis of Variance:* The standard RCBD ANOVA table showing Degrees of Freedom, Sum of Squares, Mean Squares, F-values, and P-values.
+    * *Orthogonal Contrasts:* The estimated differences, standard errors, t-ratios, and p-values for the exact contrasts you built in the editor.
+    * *Post-Hoc Grouping:* The statistical groupings (indicated by letters) based on your chosen post-hoc test.
+* **Tab 3: Treatment Plot:** A bar chart displaying the mean of each treatment. Error bars represent ±1 Standard Error (SE), and the letters above the bars indicate statistical significance based on your post-hoc test.
+* **Tab 4: Contrast Plot:** A visual representation of your orthogonal contrasts. It plots the estimated difference for each contrast with 95% error bars. The red dashed line represents exactly zero difference. If an error bar crosses the red line, that contrast is generally not statistically significant.
+* **Tab 5: Trend/Regression Plot:** *(Only visible for numerical treatments)*. A scatter plot showing individual observations, treatment means (red dots), and the fitted polynomial regression line (blue) based on the degree you selected in the sidebar.
+* **Tab 6: Data Preview:** A searchable, paginated table of your raw dataset to ensure everything loaded correctly.
+
+### 6. Downloading Your Results
+Every result tab features a blue download button at the top to help you export your work.
+* **Download Full Text Report (Tab 2):** Generates a clean `.txt` file containing your ANOVA table, contrast estimates, and post-hoc groupings.
+* **Download Plot as PNG (Tabs 3, 4, and 5):** Saves a high-resolution, publication-ready image of the respective plot directly to your computer.

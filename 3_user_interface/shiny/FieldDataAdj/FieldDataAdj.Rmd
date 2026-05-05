@@ -1,0 +1,87 @@
+---
+title: "Field Data Adjustment"
+output: html_document
+date: "2026-05-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# User Manual: Advanced Spatial ANCOVA Analyzer
+
+Welcome to the Advanced Spatial ANCOVA Analyzer. This application is designed to help researchers, agronomists, and statisticians analyze complex experimental designs. It goes beyond standard ANOVA by allowing you to incorporate **Continuous Covariates** (to reduce error) and **Spatial Coordinates** (Rows and Columns) to mathematically flatten out field gradients and isolate true treatment effects.
+
+## Table of Contents
+1. [Loading Your Data](#1-loading-your-data)
+2. [Configuring Your Model](#2-configuring-your-model)
+3. [Running the Analysis](#3-running-the-analysis)
+4. [Understanding the Output Tabs](#4-understanding-the-output-tabs)
+5. [Downloading & Exporting Results](#5-downloading--exporting-results)
+
+---
+
+### 1. Loading Your Data
+Start on the left-hand sidebar by selecting your **Data Source**. The app includes two built-in textbook examples to help you learn, plus an upload option for your own data.
+
+* **Example 1: Lima Beans (RCBD):** A classic non-spatial design. Tests 2 bean varieties across 5 replications (Blocks) using "Dry Matter" as a numeric covariate to adjust for maturity differences.
+* **Example 2: 5x5 Spatial Field:** A simulated precision-agriculture trial. Tests 5 varieties in a $5 \times 5$ grid (Rows and Columns) with spatial gradients (moisture/fertility) and "Nematodes" as a numeric covariate.
+* **Upload Custom CSV:** Select this to analyze your own data. Ensure your file is a standard `.csv` file. Your columns can be named anything; the app will automatically detect them.
+
+### 2. Configuring Your Model
+Once your data is loaded, set up your statistical model using the dropdown menus in the sidebar. The app will try to auto-detect the correct columns for the built-in examples, but you can change them at any time.
+
+* **Response Variable (Y):** The primary quantitative trait you are measuring (e.g., Yield, Ascorbic Acid, Weight).
+* **Treatment Factor:** The categorical variable you are testing (e.g., Variety, Fertilizer Type).
+* **Numeric Covariate (X):** A continuous variable measured *before* or *independent of* the treatment that affects the response (e.g., Initial Weight, Stand Count, Nematode Count). Set to **None** if you don't have one.
+* **Block Factor (Optional):** Select this if your experiment uses a standard Randomized Complete Block Design (RCBD). Set to **None** if you are using a spatial Row-Column design.
+* **Row Factor (For Spatial):** The Y-coordinate of your field grid. Essential for spatial mapping. Set to **None** if not applicable.
+* **Column Factor (For Spatial):** The X-coordinate of your field grid. Essential for spatial mapping. Set to **None** if not applicable.
+
+*Note: To generate the advanced spatial plots (Variogram and 3D Surface), you MUST select both a Row and a Column factor.*
+
+### 3. Running the Analysis
+Once your variables are selected, click the large green **Run Analysis** button at the bottom of the sidebar. 
+
+**Important:** You must click this button every time you change a dataset or update a variable selection to refresh the statistical outputs and plots.
+
+### 4. Understanding the Output Tabs
+After running the analysis, explore your results across the six designated tabs in the main panel:
+
+#### Tab 1: ANOVA & Adjusted Means
+* **Analysis of Variance (ANCOVA) Table:** Displays the sequential Sum of Squares. Look at the p-values for your Covariate, Rows, and Columns. If they are significant, it proves that including them successfully reduced your experimental error!
+* **Adjusted Estimated Marginal Means (EMMs):** The newly calculated treatment means. These estimate how your treatments *would have performed* if every single plot had the exact same covariate value and average field conditions.
+
+#### Tab 2: Raw vs Adjusted Plot
+A scatter plot comparing your original data (X-axis) against the newly adjusted data (Y-axis). 
+* The dashed black line is a 1:1 reference. 
+* Points **above** the line were penalized by poor field conditions/covariates in the real world and were adjusted *upward* by the model. 
+* Points **below** the line had an unfair advantage in the field and were adjusted *downward*.
+
+#### Tab 3: ANCOVA Covariate Plot
+*(Requires a Numeric Covariate)*
+A scatter plot of your Response vs. your Covariate, colored by Treatment. The parallel regression lines visually demonstrate the pooled slope ($\beta$) used to adjust the data to a common baseline.
+
+#### Tab 4: Spatial Variogram
+*(Requires Row and Column variables)*
+A plot of Semivariance (error similarity) vs. physical Distance between plots. 
+* In raw spatial data, plots close together are highly correlated (low semivariance). 
+* Because our model explicitly accounts for Row and Column gradients, the red dashed line here should look relatively **flat and horizontal**. A flat line proves your model successfully scrubbed out the spatial patterns, leaving only random "white noise."
+
+#### Tab 5: 3D Spatial Surface
+*(Requires Row and Column variables)*
+An interactive 3D topographical map of your field.
+* **Solid Surface (Raw Yield):** Shows the actual measured yield, complete with hills and valleys caused by field gradients (e.g., a wet corner vs. a dry corner).
+* **Wireframe Surface (Adjusted Yield):** Shows the mathematically leveled field. The spatial "tilt" is removed, allowing the true peaks of your highest-yielding treatments to stand out on a flat baseline.
+* *Interaction:* Click and drag to rotate the field. Scroll to zoom in and out.
+
+#### Tab 6: Adjusted Data Preview
+A searchable spreadsheet containing your original data alongside a newly generated column (e.g., `Yield_Adjusted`). This column contains the individual, mathematically corrected value for every single plot.
+
+### 5. Downloading & Exporting Results
+Every result tab features a blue **Download** button at the top to help you export your work for reports or presentations.
+
+* **Download Text Report (Tab 1):** Generates a clean `.txt` file containing your ANOVA table and the Adjusted Means.
+* **Download Plot (Tabs 2, 3, and 4):** Saves a high-resolution, publication-ready `.png` image of the respective 2D plot.
+* **Download 3D Plot (Tab 5):** To download the 3D surface, hover your mouse over the plot and click the small **Camera Icon** that appears in the top-right corner of the interactive toolbar.
+* **Download Adjusted CSV (Tab 6):** Exports your entire dataset, including the new individual adjusted values, as a `.csv` file for further use in Excel or other software.

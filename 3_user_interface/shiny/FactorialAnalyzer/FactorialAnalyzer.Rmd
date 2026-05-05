@@ -1,0 +1,78 @@
+---
+title: "Factorial Analysis with Contrasts"
+output: html_document
+date: "2026-05-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# User Manual: Multi-Factor ANOVA & Contrast Analyzer
+
+Welcome to the Multi-Factor RCBD & Contrast Analyzer! This application is designed to streamline the analysis of complex agricultural and biological experiments. It goes beyond simple single-factor designs to natively handle 2-way and 3-way factorial experiments, interactive orthogonal contrasts, and dynamic visualizations.
+
+## Table of Contents
+1. [Loading Your Data](#1-loading-your-data)
+2. [Configuring Your Model](#2-configuring-your-model)
+3. [The Contrast Editor (Main Effects & Interactions)](#3-the-contrast-editor)
+4. [Running the Analysis](#4-running-the-analysis)
+5. [Understanding the Output Tabs](#5-understanding-the-output-tabs)
+6. [Exporting & Downloading Results](#6-exporting--downloading-results)
+
+---
+
+### 1. Loading Your Data
+Start on the left-hand sidebar by selecting your **Data Source**. The app includes four textbook examples to help you learn, plus an upload option.
+* **Ex 1: Greenhouse (1-Way Categorical):** Tests 8 fungicide treatments in a Randomized Complete Block Design (RCBD).
+* **Ex 2: Soybeans (1-Way Quantitative):** Tests 5 row spacings to demonstrate polynomial trend regression.
+* **Ex 3: Lambs (2-Way CRD):** A $2 \times 2$ factorial experiment testing Time (AM/PM) and Estrogen (Control/Treated). No blocking.
+* **Ex 4: Seedlings (3-Way CRD):** A complex $3 \times 3 \times 2$ factorial testing Species, Soil type, and Fungicide presence.
+* **Upload Custom CSV:** Select this to analyze your own data. Ensure your file is a standard `.csv` with columns for your block(s) and treatments.
+
+### 2. Configuring Your Model
+Once your data is loaded, set up your statistical model in the sidebar:
+* **Response:** Select the quantitative variable you are measuring (e.g., Yield, Stand, Phospholipid).
+* **Block (Optional):** Select your blocking factor. If your experiment is a Completely Randomized Design (CRD) with no blocks (like Examples 3 and 4), leave this set to **"None"**.
+* **Treatment Factors (Select Multiple):** *New Feature!* Click into the box to select one, two, or three treatment factors. The app will automatically build the full factorial interaction model (e.g., `A * B * C`).
+* **Means Comparison:** Choose a post-hoc grouping test (**LSD**, **Tukey**, or **Duncan**), or select **none**.
+* **Polynomial Trend Plot:** *Note: This only appears if you select a single, purely numerical treatment factor.* It allows you to select the degree of polynomial regression (1 = Linear, 2 = Quadratic, etc.).
+
+### 3. The Contrast Editor
+This interactive spreadsheet allows you to define custom orthogonal contrasts. 
+
+**How the Interaction Grid Works:**
+If you select multiple treatment factors, the app automatically generates an "Estimated Marginal Means Grid." The columns of the table will dynamically update to show every possible combination of your factors (e.g., `AM : Control`, `PM : Control`).
+
+1. Navigate to **Tab 1: Contrast Editor**.
+2. Type the name of your contrast in the **Name** column.
+3. Enter your coefficients across the row. The sum of a row must equal zero for it to be a valid orthogonal contrast.
+    * **Main Effects:** Apply `1` and `-1` to the groups you want to compare, ignoring the other factor (e.g., all Controls vs all Treated).
+    * **Simple Effects:** Isolate a specific condition by placing `0`s in the columns you want to ignore.
+    * **Interactions:** Test the "difference of differences" by alternating the signs of your coefficients across the grid.
+4. **To Add/Delete:** Right-click any cell to open the context menu and select "Insert row below" or "Remove row."
+
+*Tip: Load Example 3 (Lambs) to see classic examples of Main Effect and Interaction contrasts pre-filled for you!*
+
+### 4. Running the Analysis
+Once your variables are selected and your contrasts are defined, click the green **Run Analysis** button. 
+
+**Important:** You must click this button every time you change a setting, select a new factor, or edit the contrast table to refresh the outputs.
+
+### 5. Understanding the Output Tabs
+Explore your results across the designated tabs:
+
+* **Tab 1: Contrast Editor:** Your input table for defining comparisons.
+* **Tab 2: ANOVA & Results:** Displays the raw statistical output.
+    * *Analysis of Variance:* The full ANOVA table. If you selected multiple factors, it will display the main effects and all interaction terms (e.g., `Time:Estrogen`).
+    * *Orthogonal Contrasts:* The estimated differences, standard errors, and p-values for the contrasts you built.
+    * *Post-Hoc Grouping:* The statistical groupings based on your chosen post-hoc test.
+* **Tab 3: Treatment Plot:** A bar chart displaying the mean of every treatment combination. Error bars represent ±1 Standard Error (SE), and the letters indicate statistical significance.
+* **Tab 4: Contrast Plot:** Plots the estimated difference for each contrast with 95% error bars. The red dashed line represents exactly zero difference. If an error bar crosses the red line, the contrast is generally not statistically significant.
+* **Tab 5: Trend Plot:** *(Only visible for single, numerical treatments)*. A scatter plot showing individual observations, treatment means (red dots), and the fitted polynomial regression line (blue).
+* **Tab 6: Data Preview:** A searchable table of your raw dataset.
+
+### 6. Exporting & Downloading Results
+Easily save your work using the blue download buttons located on the output tabs:
+* **Download Full Text Report (Tab 2):** Generates a clean `.txt` file containing your model formula, ANOVA table, contrast estimates, and post-hoc groupings.
+* **Download Plot as PNG (Tabs 3, 4, and 5):** Saves a high-resolution image of the respective plot directly to your computer.
