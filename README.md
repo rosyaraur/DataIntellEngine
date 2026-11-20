@@ -1,4 +1,4 @@
-# DataIntellEngine
+# DataIntellEngine : A Local-First, Multi-Agent RAG Pipeline for Autonomous Biostatistical & Quantitative Data Analysis
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![R 4.2+](https://img.shields.io/badge/R-4.2%2B-276DC3.svg)](https://www.r-project.org/)
