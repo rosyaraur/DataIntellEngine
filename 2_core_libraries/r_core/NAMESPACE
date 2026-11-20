@@ -1,2 +1,0 @@
-# Export all functions that don't start with a dot
-exportPattern("^[[:alpha:]]+")

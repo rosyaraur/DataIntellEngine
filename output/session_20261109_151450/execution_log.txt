@@ -1,0 +1,12 @@
+=== ERROR EXECUTING R SCRIPT ===
+Exit Code: 1
+
+=== STDOUT ===
+
+
+=== STDERR ===
+Loading required package: Matrix
+Error in eval(predvars, data, env) : object 'y' not found
+Calls: enhanced_mixed_model ... eval -> <Anonymous> -> model.frame.default -> eval -> eval
+Execution halted
+

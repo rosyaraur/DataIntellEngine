@@ -1,0 +1,11 @@
+=== ERROR EXECUTING R SCRIPT ===
+Exit Code: 1
+
+=== STDOUT ===
+
+
+=== STDERR ===
+Loading required package: Matrix
+Error: grouping factors must have > 1 sampled level
+Execution halted
+
