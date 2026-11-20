@@ -1,12 +1,12 @@
 # DataIntellEngine
 
-**A Local-First, Multi-Agent RAG Pipeline for Autonomous Biostatistical & Quantitative Data Analysis**
-
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![R 4.2+](https://img.shields.io/badge/R-4.2%2B-276DC3.svg)](https://www.r-project.org/)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama%20Local-black.svg)](https://ollama.com/)
 [![ChromaDB](https://img.shields.io/badge/VectorDB-ChromaDB-orange.svg)](https://www.trychroma.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+**A Local-First, Multi-Agent RAG Pipeline for Autonomous Biostatistical & Quantitative Data Analysis**
 
 **DataIntellEngine** is a privacy-preserving, zero-API-cost analytical engine that translates natural-language statistical requests into executable R scripts, runs them locally, and produces structured biostatistical reports. Powered by **Ollama** (`llama3.2` and `nomic-embed-text`), **LangChain**, and **ChromaDB**, it grounds code generation in a curated library of 20 enhanced R statistical functions and live dataset schemas so sensitive clinical or research data never leaves your local network.
 
